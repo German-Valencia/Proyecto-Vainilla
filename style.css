@@ -1610,12 +1610,13 @@ body {
 
 .receipt-preview-img {
   width: 100%;
-  max-width: 240px;
-  max-height: 180px;
-  object-fit: cover;
+  max-width: 280px;
+  max-height: 320px;
+  object-fit: contain;
   border-radius: 16px;
   border: 2px dashed rgba(0, 122, 255, 0.4);
   box-shadow: var(--shadow-sm);
+  background: #1c1c1e;
   display: none;
 }
 

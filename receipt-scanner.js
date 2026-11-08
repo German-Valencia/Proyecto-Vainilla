@@ -92,7 +92,7 @@ class ReceiptScanner {
       const canvas = this.preprocessCanvas(img);
 
       if (this.imagePreview) {
-        this.imagePreview.src = canvas.toDataURL('image/jpeg', 0.85);
+        this.imagePreview.src = img.src;
         this.imagePreview.style.display = 'block';
       }
 
@@ -152,18 +152,16 @@ class ReceiptScanner {
     canvas.height = height;
     ctx.drawImage(img, 0, 0, width, height);
 
-    // Binarización y aumento de contraste para papel térmico
+    // Escala de grises con contraste moderado para conservar detalles del ticket.
     const imgData = ctx.getImageData(0, 0, width, height);
     const d = imgData.data;
 
     for (let i = 0; i < d.length; i += 4) {
-      // Escala de grises por luminancia
       const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-      // Aumento de contraste (umbral adaptativo suave)
-      const contrast = gray > 140 ? 255 : gray < 80 ? 0 : (gray - 80) * (255 / 60);
-      d[i] = contrast;
-      d[i + 1] = contrast;
-      d[i + 2] = contrast;
+      const grayscale = Math.max(0, Math.min(255, (gray - 128) * 1.1 + 128));
+      d[i] = grayscale;
+      d[i + 1] = grayscale;
+      d[i + 2] = grayscale;
     }
 
     ctx.putImageData(imgData, 0, 0);
