@@ -1,5 +1,5 @@
 /**
- * receipt-scanner.js - Escáner de Facturas y Auditor de Compras (100% Offline)
+ * receipt-scanner.js - Escáner de Facturas y Auditor de Compras
  * Procesa fotos de tickets de supermercado mediante Canvas y Tesseract.js en el cliente,
  * compara lo comprado con lo facturado y actualiza la lista y el histórico de precios.
  */
@@ -178,7 +178,7 @@ class ReceiptScanner {
     }
 
     const { createWorker } = window.Tesseract;
-    const worker = await createWorker('spa', 1, {
+    const worker = await createWorker({
       logger: (m) => {
         if (m.status === 'recognizing text' && this.progressBar && this.progressText) {
           const pct = Math.round(m.progress * 100);
@@ -188,9 +188,20 @@ class ReceiptScanner {
       }
     });
 
-    const ret = await worker.recognize(canvas);
-    await worker.terminate();
-    return ret.data.text || '';
+    this.worker = worker;
+
+    try {
+      await worker.loadLanguage('spa');
+      await worker.initialize('spa');
+      this.isWorkerReady = true;
+
+      const ret = await worker.recognize(canvas);
+      return ret.data.text || '';
+    } finally {
+      this.isWorkerReady = false;
+      this.worker = null;
+      await worker.terminate();
+    }
   }
 
   loadTesseractScript() {

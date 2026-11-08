@@ -3,7 +3,7 @@
  * Proporciona soporte 100% Offline y almacenamiento en caché para iPhone y navegadores modernos.
  */
 
-const CACHE_NAME = 'mercadoya-v6';
+const CACHE_NAME = 'mercadoya-v7';
 
 const ASSETS_TO_CACHE = [
   './',
