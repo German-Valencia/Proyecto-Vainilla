@@ -1,47 +1,591 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    
+    <!-- ====================================================================
+         SEO Primario & Metadatos
+         ==================================================================== -->
+    <title>Mercado App - Lista de Compras Inteligente y Gratis (PWA)</title>
+    <meta
+      name="description"
+      content="Organiza tu lista de compras del supermercado gratis. Filtra por pasillos y categorías, usa gestos táctiles y llévala en tu iPhone o Android 100% sin conexión."
+    />
+    <meta
+      name="keywords"
+      content="lista de compras, lista de mercado, app de compras, lista supermercado gratis, lista compras offline, pwa lista de compras, organizador de despensa"
+    />
+    <meta name="author" content="Mercado App" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <link rel="canonical" href="https://mercadoya.vercel.app/" />
+
+    <!-- ====================================================================
+         Open Graph Protocol (Facebook, WhatsApp, Telegram, LinkedIn)
+         ==================================================================== -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mercadoya.vercel.app/" />
+    <meta property="og:site_name" content="Mercado App" />
+    <meta property="og:title" content="Mercado App - Lista de Compras Inteligente y Gratis" />
+    <meta
+      property="og:description"
+      content="Tu lista de mercado inteligente. Filtra por categorías de supermercado, usa gestos táctiles y compra sin conexión."
+    />
+    <meta property="og:image" content="https://mercadoya.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Mercado App - Aplicación de Lista de Compras" />
+    <meta property="og:locale" content="es_ES" />
+
+    <!-- ====================================================================
+         Twitter Cards (X)
+         ==================================================================== -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Mercado App - Lista de Compras Inteligente" />
+    <meta
+      name="twitter:description"
+      content="Organiza tus compras por pasillos y categorías. Rápida, privada y 100% funcional sin conexión a internet."
+    />
+    <meta name="twitter:image" content="https://mercadoya.vercel.app/og-image.png" />
+
+    <!-- ====================================================================
+         Apple WebKit & PWA Mobile Capabilities
+         ==================================================================== -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Mercado" />
+    <meta name="application-name" content="Mercado App" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Theme Colors (Light & Dark Mode) -->
+    <meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121214" media="(prefers-color-scheme: dark)" />
+
+    <!-- Icons & Manifest -->
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- ====================================================================
+         Google Fonts & Web Fonts Optimization
+         ==================================================================== -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
 
+    <!-- Font Awesome Icons -->
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
-      integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
       crossorigin="anonymous"
+      referrerpolicy="no-referrer"
     />
 
     <link rel="stylesheet" href="./style.css" />
-    <title>Mercado App</title>
+
+    <!-- ====================================================================
+         Schema.org Datos Estructurados (JSON-LD) para Google Search
+         ==================================================================== -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://mercadoya.vercel.app/#webapp",
+          "url": "https://mercadoya.vercel.app/",
+          "name": "Mercado App - Lista de Compras",
+          "applicationCategory": "ShoppingApplication",
+          "operatingSystem": "All (iOS, Android, Windows, macOS, Linux)",
+          "browserRequirements": "Requires JavaScript. Requires HTML5.",
+          "image": "https://mercadoya.vercel.app/og-image.png",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "Aplicación web progresiva (PWA) para organizar y gestionar la lista de compras del supermercado por categorías con soporte offline y gestos táctiles.",
+          "featureList": [
+            "Filtro inteligente por pasillos y categorías",
+            "Funcionamiento 100% Offline con Service Worker",
+            "Gestos táctiles de deslizamiento (Swipe) para iPhone y Android",
+            "Privacidad total: datos guardados en el almacenamiento local",
+            "Diseño adaptativo para móviles, tablets y ordenadores"
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://mercadoya.vercel.app/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "¿Funciona Mercado App sin conexión a internet?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sí. Gracias a la tecnología de Service Worker y LocalStorage, la aplicación funciona al 100% en modo offline sin cobertura celular ni conexión Wi-Fi dentro del supermercado."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Cómo instalo Mercado App en la pantalla de mi iPhone?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Abre la aplicación en Safari en tu iPhone, pulsa el botón 'Compartir' (icono con la flecha hacia arriba) y selecciona 'Agregar a inicio'."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Son privados mis datos de compra?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Completamente. La aplicación no requiere registro ni cuenta. Todos los productos y notas se guardan de forma privada y exclusiva en el navegador de tu dispositivo."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
-    <header>
-      <h1>Lista de Mercado</h1>
-    </header>
-    <form>
-        <div class="input-container">
-          <input type="text" class="todo-input" />
-          <button class="todo-button" type="submit">
-            <i class="fas fa-plus-square"></i>
+    <div class="app-wrapper">
+      <!-- Status Badge (Offline Indicator) -->
+      <aside id="offline-badge" class="offline-badge" aria-live="polite">
+        <i class="fas fa-wifi-slash"></i> Modo sin conexión activo (Tus datos están guardados localmente)
+      </aside>
+
+      <!-- App Header -->
+      <header class="app-header">
+        <div class="header-icon-badge" aria-hidden="true">
+          <i class="fas fa-shopping-basket"></i>
+        </div>
+        <h1 class="app-title">Lista de Mercado</h1>
+        <p class="app-subtitle" id="todo-stats">0 productos en la lista</p>
+      </header>
+
+      <!-- Main Interactive Application Card -->
+      <main class="app-card" id="main-content">
+        <!-- Budget & Financial Tracker Card -->
+        <section class="budget-card" id="budget-card" aria-label="Control de presupuesto y gastos">
+          <div class="budget-header">
+            <div class="budget-summary">
+              <span class="budget-label">Total en carrito:</span>
+              <span class="budget-spent" id="budget-spent">$0.00</span>
+              <span class="budget-estimated" id="budget-estimated">de ~$0.00 estimado</span>
+            </div>
+            <div class="budget-actions">
+              <button
+                type="button"
+                id="budget-goal-btn"
+                class="budget-pill-btn"
+                title="Configurar límite de presupuesto"
+              >
+                <i class="fas fa-bullseye"></i> <span id="budget-goal-text">Meta: Sin límite</span>
+              </button>
+              <button
+                type="button"
+                id="open-history-btn"
+                class="budget-pill-btn price-history-pill"
+                title="Ver Catálogo e Histórico de Precios"
+              >
+                <i class="fas fa-chart-line"></i> Precios
+              </button>
+              <button
+                type="button"
+                id="scan-receipt-btn"
+                class="budget-pill-btn scan-receipt-pill"
+                title="Tomar foto de la factura del supermercado para auditar"
+              >
+                <i class="fas fa-camera"></i> Factura
+              </button>
+              <!-- Hidden native camera input for iPhone / Android -->
+              <input
+                type="file"
+                id="receipt-file-input"
+                accept="image/*"
+                capture="environment"
+                class="sr-only"
+                aria-hidden="true"
+              />
+            </div>
+          </div>
+          <div class="budget-progress-track" title="Progreso del presupuesto">
+            <div class="budget-progress-fill" id="budget-progress-fill" style="width: 0%;"></div>
+          </div>
+        </section>
+
+        <!-- Input Form with Category, Quantity & Price Selectors -->
+        <form id="todo-form" class="todo-form" autocomplete="off" aria-label="Agregar producto a la lista">
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="todo-input"
+              class="todo-input"
+              placeholder="¿Qué necesitas comprar hoy?"
+              aria-label="Nombre del producto a comprar"
+              autocapitalize="sentences"
+              enterkeyhint="next"
+              required
+            />
+            <div class="addon-group">
+              <div class="input-addon qty-addon" title="Cantidad">
+                <input
+                  type="number"
+                  id="todo-qty"
+                  class="addon-input qty-input"
+                  value="1"
+                  min="1"
+                  max="99"
+                  step="1"
+                  aria-label="Cantidad"
+                />
+                <span class="addon-suffix">ud</span>
+              </div>
+              <div class="input-addon price-addon" title="Precio unitario estimado">
+                <span class="addon-prefix">$</span>
+                <input
+                  type="number"
+                  id="todo-price"
+                  class="addon-input price-input"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  inputmode="decimal"
+                  aria-label="Precio unitario"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              id="todo-button"
+              class="todo-button"
+              aria-label="Agregar producto a la lista"
+              title="Agregar (Enter)"
+            >
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+
+          <!-- Price History Hint (When previously recorded price is found) -->
+          <div id="price-history-hint" class="price-history-hint" style="display: none;">
+            <div class="hint-content">
+              <i class="fas fa-history"></i>
+              <span>Precio previo de <strong id="hint-name">producto</strong>: <strong id="hint-price">$0.00</strong></span>
+            </div>
+            <button type="button" id="use-hint-btn" class="use-hint-btn">Aplicar</button>
+          </div>
+
+          <!-- Category Filter & Picker Chips (Scrollable horizontal pills) -->
+          <div class="category-chips-container" aria-label="Filtrar por categoría">
+            <div class="category-chips" id="category-chips" role="radiogroup">
+              <button type="button" class="category-chip active" data-category="all" role="radio" aria-checked="true">
+                <i class="fas fa-layer-group"></i> Todas
+              </button>
+              <button type="button" class="category-chip" data-category="general" role="radio" aria-checked="false">
+                <i class="fas fa-box"></i> Varios
+              </button>
+              <button type="button" class="category-chip" data-category="frutas" role="radio" aria-checked="false">
+                <i class="fas fa-apple-alt"></i> Frutas
+              </button>
+              <button type="button" class="category-chip" data-category="lacteos" role="radio" aria-checked="false">
+                <i class="fas fa-egg"></i> Lácteos y Huevos
+              </button>
+              <button type="button" class="category-chip" data-category="carnes" role="radio" aria-checked="false">
+                <i class="fas fa-drumstick-bite"></i> Carnes
+              </button>
+              <button type="button" class="category-chip" data-category="panaderia" role="radio" aria-checked="false">
+                <i class="fas fa-bread-slice"></i> Panadería
+              </button>
+              <button type="button" class="category-chip" data-category="limpieza" role="radio" aria-checked="false">
+                <i class="fas fa-pump-soap"></i> Limpieza
+              </button>
+              <button type="button" class="category-chip" data-category="bebidas" role="radio" aria-checked="false">
+                <i class="fas fa-wine-bottle"></i> Bebidas
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- iOS Segmented Control Filter -->
+        <nav class="segmented-control" role="tablist" aria-label="Filtro de estado de productos">
+          <button
+            type="button"
+            class="segment-btn active"
+            data-filter="all"
+            role="tab"
+            aria-selected="true"
+          >
+            Todas
           </button>
+          <button
+            type="button"
+            class="segment-btn"
+            data-filter="uncompleted"
+            role="tab"
+            aria-selected="false"
+          >
+            Pendientes
+          </button>
+          <button
+            type="button"
+            class="segment-btn"
+            data-filter="completed"
+            role="tab"
+            aria-selected="false"
+          >
+            Compradas
+          </button>
+        </nav>
+
+        <!-- Hidden Native Select for Accessibility & Backward Compatibility -->
+        <select name="todos" class="filter-todo sr-only" aria-hidden="true" tabindex="-1">
+          <option value="all" selected>Todas</option>
+          <option value="uncompleted">Sin Completar</option>
+          <option value="completed">Completadas</option>
+        </select>
+
+        <!-- Gesture Hint (Swipe left/right) on touch devices -->
+        <div class="gesture-hint" aria-hidden="true">
+          <span><i class="fas fa-arrow-right"></i> Desliza a la derecha para completar</span>
+          <span>Desliza a la izquierda para borrar <i class="fas fa-arrow-left"></i></span>
         </div>
-        <div class="select">
-          <select name="todos" class="filter-todo">
-            <option value="all">Todas</option>
-            <option value="completed">Completadas</option>
-            <option value="uncompleted">Sin Completar</option>
-          </select>
+
+        <!-- Todo Items Container -->
+        <div class="todo-container">
+          <ul class="todo-list" id="todo-list" role="list"></ul>
+
+          <!-- Empty State -->
+          <div id="empty-state" class="empty-state">
+            <div class="empty-icon">
+              <i class="fas fa-clipboard-check"></i>
+            </div>
+            <p class="empty-title">¡Lista al día!</p>
+            <p class="empty-desc">No tienes productos en esta vista.</p>
+          </div>
         </div>
-      </form>
-    <div class="todo-container">
-      <ul class="todo-list"></ul>
+
+        <!-- Footer Actions (Share, Clear Completed & Quick Stats) -->
+        <div class="list-footer" id="list-footer">
+          <span class="footer-counter" id="footer-counter">0 restantes</span>
+          <div class="footer-actions">
+            <button
+              type="button"
+              id="share-list-btn"
+              class="share-list-btn"
+              aria-label="Compartir lista por WhatsApp o mensaje"
+            >
+              <i class="fas fa-share-nodes"></i> Compartir
+            </button>
+            <button
+              type="button"
+              id="clear-completed-btn"
+              class="clear-completed-btn"
+            >
+              <i class="fas fa-broom"></i> Borrar compradas
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <!-- ====================================================================
+           Sección de Contenido Semántico y SEO (Indexable por Motores de Búsqueda)
+           ==================================================================== -->
+      <section class="seo-info-section" aria-label="Guía y características de Mercado App">
+        <h2 class="seo-section-title">¿Por qué usar Mercado App para tus compras?</h2>
+        
+        <div class="features-grid">
+          <article class="feature-card">
+            <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+            <h3 class="feature-title">Rápida y Privada</h3>
+            <p class="feature-desc">Sin registros ni publicidad. Tus datos nunca salen de tu dispositivo y se guardan al instante.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon"><i class="fas fa-tags"></i></div>
+            <h3 class="feature-title">Organización por Pasillos</h3>
+            <p class="feature-desc">Clasifica automáticamente tus compras (frutas, carnes, lácteos) para ahorrar tiempo en el supermercado.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon"><i class="fas fa-wifi"></i></div>
+            <h3 class="feature-title">100% Sin Conexión</h3>
+            <p class="feature-desc">Gracias a la tecnología PWA, funciona dentro de cualquier supermercado aunque no tengas señal celular.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+            <h3 class="feature-title">Gestos Táctiles Fluidos</h3>
+            <p class="feature-desc">Desliza con el pulgar para marcar productos comprados o eliminarlos con total comodidad con una sola mano.</p>
+          </article>
+        </div>
+
+        <!-- Preguntas Frecuentes (FAQ Accordion con Semántica Nativa) -->
+        <section class="faq-container" aria-label="Preguntas frecuentes">
+          <h2 class="faq-main-title">Preguntas Frecuentes</h2>
+
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>¿Cómo instalo la app en mi iPhone o teléfono Android?</span>
+              <i class="fas fa-chevron-down faq-chevron"></i>
+            </summary>
+            <div class="faq-answer">
+              <p>En <strong>iPhone (Safari)</strong>: Toca el botón <em>Compartir</em> en la barra inferior y selecciona <em>"Agregar a inicio"</em>.<br />En <strong>Android (Chrome)</strong>: Toca los tres puntos arriba a la derecha y selecciona <em>"Instalar aplicación"</em>.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>¿Se borra mi lista si cierro el navegador o apago el móvil?</span>
+              <i class="fas fa-chevron-down faq-chevron"></i>
+            </summary>
+            <div class="faq-answer">
+              <p>No. Todos tus productos se guardan de forma permanente y segura en el almacenamiento local de tu navegador (LocalStorage). Cuando vuelvas a abrir la app, tu lista estará exactamente como la dejaste.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>¿Puedo usar la aplicación desde un ordenador o tablet?</span>
+              <i class="fas fa-chevron-down faq-chevron"></i>
+            </summary>
+            <div class="faq-answer">
+              <p>¡Sí! El diseño es completamente adaptativo (responsive) y se ajusta a ordenadores, iPads, tablets y pantallas de escritorio sin perder ninguna función.</p>
+            </div>
+          </details>
+        </section>
+      </section>
+
+      <!-- Modals (Cupertino Bottom Sheets) -->
+      <!-- 1. Modal: Meta de Presupuesto -->
+      <div id="budget-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-sheet" role="dialog" aria-labelledby="budget-modal-title">
+          <div class="modal-handle"></div>
+          <div class="modal-header">
+            <h2 id="budget-modal-title" class="modal-title">Definir Meta de Presupuesto</h2>
+            <button type="button" class="modal-close-btn" data-close="budget-modal" aria-label="Cerrar">&times;</button>
+          </div>
+          <form id="budget-form" class="modal-body">
+            <p class="modal-desc">Establece un límite de gasto para tu compra. La barra de progreso te alertará si te acercas o sobrepasas tu meta.</p>
+            <div class="modal-input-group">
+              <span class="modal-input-prefix">$</span>
+              <input type="number" id="budget-input" step="0.50" min="0" placeholder="Ej. 50.00" inputmode="decimal" class="modal-input" required />
+            </div>
+            <div class="modal-actions">
+              <button type="button" id="remove-budget-btn" class="modal-btn secondary-btn">Quitar límite</button>
+              <button type="submit" class="modal-btn primary-btn">Guardar Meta</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- 2. Modal: Editar Producto & Precio -->
+      <div id="edit-item-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-sheet" role="dialog" aria-labelledby="edit-modal-title">
+          <div class="modal-handle"></div>
+          <div class="modal-header">
+            <h2 id="edit-modal-title" class="modal-title">Editar Producto</h2>
+            <button type="button" class="modal-close-btn" data-close="edit-item-modal" aria-label="Cerrar">&times;</button>
+          </div>
+          <form id="edit-item-form" class="modal-body">
+            <input type="hidden" id="edit-item-id" />
+            <div class="form-group">
+              <label for="edit-item-name" class="form-label">Nombre del producto</label>
+              <input type="text" id="edit-item-name" class="modal-input text-left" required />
+            </div>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="edit-item-qty" class="form-label">Cantidad</label>
+                <input type="number" id="edit-item-qty" min="1" max="99" class="modal-input" required />
+              </div>
+              <div class="form-group flex-1">
+                <label for="edit-item-price" class="form-label">Precio Unitario ($)</label>
+                <input type="number" id="edit-item-price" step="0.01" min="0" placeholder="0.00" inputmode="decimal" class="modal-input" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="edit-item-store" class="form-label">Supermercado / Tienda (opcional)</label>
+              <input type="text" id="edit-item-store" placeholder="Ej. Mercadona, Éxito, Walmart" class="modal-input text-left" />
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="modal-btn secondary-btn" data-close="edit-item-modal">Cancelar</button>
+              <button type="submit" class="modal-btn primary-btn">Actualizar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- 3. Modal: Catálogo e Histórico de Precios -->
+      <div id="history-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-sheet modal-large" role="dialog" aria-labelledby="history-modal-title">
+          <div class="modal-handle"></div>
+          <div class="modal-header">
+            <h2 id="history-modal-title" class="modal-title"><i class="fas fa-chart-line"></i> Histórico de Precios</h2>
+            <button type="button" class="modal-close-btn" data-close="history-modal" aria-label="Cerrar">&times;</button>
+          </div>
+          <div class="modal-body history-body">
+            <p class="modal-desc">Base de datos local con los precios registrados de tus compras anteriores.</p>
+            <div class="history-search-wrapper">
+              <i class="fas fa-search search-icon"></i>
+              <input type="search" id="history-search-input" placeholder="Buscar producto en tu histórico..." class="history-search-input" />
+            </div>
+            <div id="history-items-container" class="history-items-container">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Modal: Escáner y Auditoría de Facturas (Comprado vs Facturado) -->
+      <div id="receipt-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-sheet modal-large" role="dialog" aria-labelledby="receipt-modal-title">
+          <div class="modal-handle"></div>
+          <div class="modal-header">
+            <h2 id="receipt-modal-title" class="modal-title">
+              <i class="fas fa-receipt"></i> Auditoría de Factura
+            </h2>
+            <button type="button" class="modal-close-btn" data-close="receipt-modal" aria-label="Cerrar">&times;</button>
+          </div>
+
+          <!-- Vista 1: Procesamiento OCR -->
+          <div id="receipt-scanning-view" class="receipt-scanning-view">
+            <img id="receipt-image-preview" class="receipt-preview-img" alt="Vista previa del ticket" />
+            <div class="ocr-progress-container">
+              <div class="ocr-progress-track">
+                <div id="ocr-progress-fill" class="ocr-progress-fill" style="width: 15%;"></div>
+              </div>
+              <p id="ocr-progress-text" class="ocr-progress-text">Procesando imagen en tu dispositivo...</p>
+            </div>
+          </div>
+
+          <!-- Vista 2: Reporte de Auditoría (Comprado vs Facturado) -->
+          <div id="receipt-audit-view" class="receipt-audit-view" style="display: none;">
+            <div id="audit-metrics-summary" class="audit-metrics-summary"></div>
+            <div id="audit-results-container" class="audit-results-container"></div>
+            <div class="modal-actions" style="margin-top: 1rem;">
+              <button type="button" class="modal-btn secondary-btn" data-close="receipt-modal">Cerrar</button>
+              <button type="button" id="apply-audit-btn" class="modal-btn primary-btn">
+                <i class="fas fa-check-double"></i> Aplicar a mi lista
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Semantic Footer -->
+      <footer class="app-site-footer">
+        <p>© 2026 Mercado App — Tu lista de compras inteligente, privada y gratuita.</p>
+        <p class="footer-subtext">Diseñada para iOS Safari, Android y Navegadores Modernos.</p>
+      </footer>
+
+      <div class="ios-home-indicator-spacer" aria-hidden="true"></div>
     </div>
 
+    <script src="./db.js"></script>
     <script src="./app.js"></script>
+    <script src="./receipt-scanner.js"></script>
   </body>
 </html>
