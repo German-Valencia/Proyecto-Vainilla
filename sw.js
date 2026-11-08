@@ -1,9 +1,9 @@
 /**
- * Service Worker para Mercado App
+ * Service Worker para MercadoYa
  * Proporciona soporte 100% Offline y almacenamiento en caché para iPhone y navegadores modernos.
  */
 
-const CACHE_NAME = 'mercado-app-v4';
+const CACHE_NAME = 'mercadoya-v6';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -13,6 +13,10 @@ const ASSETS_TO_CACHE = [
   './db.js',
   './receipt-scanner.js',
   './manifest.json',
+  './manual.html',
+  './privacy.html',
+  './terms.html',
+  './disclaimer.html',
   './icon.svg',
   './apple-touch-icon.png',
   './icon-192.png',

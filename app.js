@@ -1,5 +1,5 @@
 /**
- * Mercado App - Vanilla JS (ES6+)
+ * MercadoYa - Vanilla JS (ES6+)
  * Módulo de Precios, Presupuestos e Histórico con IndexedDB (100% Offline).
  */
 

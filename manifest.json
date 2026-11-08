@@ -1,6 +1,6 @@
 {
-  "name": "Mercado App - Lista de Compras",
-  "short_name": "Mercado",
+  "name": "MercadoYa - Lista de Compras",
+  "short_name": "MercadoYa",
   "description": "Tu lista de compras inteligente, rápida y lista para llevar al supermercado.",
   "start_url": "https://mercadoya.vercel.app/",
   "scope": "https://mercadoya.vercel.app/",

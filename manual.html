@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Manual de usuario de MercadoYa — lista de compras inteligente, offline y gratuita." />
+  <title>Manual de Usuario · MercadoYa</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <style>
+    /* =============================================
+       BASE — igual que el resto de la app
+       ============================================= */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --blue: #007AFF;
+      --green: #34C759;
+      --orange: #FF9500;
+      --red: #FF3B30;
+      --bg: #f7f8fa;
+      --card-bg: #ffffff;
+      --text: #1c1c1e;
+      --text-secondary: #6c6c70;
+      --border: rgba(0, 0, 0, 0.08);
+      --radius: 16px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121214;
+        --card-bg: #1c1c1e;
+        --text: #f2f2f7;
+        --text-secondary: #98989d;
+        --border: rgba(255, 255, 255, 0.08);
+      }
+    }
+
+    body {
+      font-family: 'Poppins', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100dvh;
+    }
+
+    /* =============================================
+       HEADER
+       ============================================= */
+    .manual-header {
+      background: var(--blue);
+      color: #fff;
+      padding: 1rem 1.25rem 1.5rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .back-link {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-60%);
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: opacity 0.2s;
+    }
+
+    .back-link:hover { opacity: 0.75; }
+
+    .manual-header h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-top: 0.25rem;
+    }
+
+    .manual-header p {
+      font-size: 0.8rem;
+      opacity: 0.82;
+      margin-top: 0.15rem;
+    }
+
+    /* =============================================
+       INTRO BADGE
+       ============================================= */
+    .intro-banner {
+      background: linear-gradient(135deg, #007AFF 0%, #0055d4 100%);
+      color: #fff;
+      border-radius: var(--radius);
+      margin: 1.25rem 1rem 0;
+      padding: 1rem 1.25rem;
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+    }
+
+    .intro-banner .intro-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .intro-banner h2 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .intro-banner p {
+      font-size: 0.82rem;
+      opacity: 0.88;
+      margin-top: 0.2rem;
+    }
+
+    /* =============================================
+       MAIN CONTENT
+       ============================================= */
+    main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 1rem 1rem 2.5rem;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      margin: 1.5rem 0 0.5rem 0.25rem;
+    }
+
+    /* =============================================
+       ACORDEÓN — <details> / <summary>
+       ============================================= */
+    details {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 0.6rem;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+
+    details[open] {
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+    }
+
+    summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 1rem 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+
+    .summary-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .summary-text {
+      flex: 1;
+    }
+
+    .summary-text strong {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .summary-text span {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .summary-chevron {
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    details[open] .summary-chevron {
+      transform: rotate(90deg);
+    }
+
+    .detail-body {
+      padding: 0 1.1rem 1.1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* =============================================
+       DETAIL BODY — Contenido
+       ============================================= */
+    .detail-body p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.85rem;
+    }
+
+    .detail-body p strong {
+      color: var(--text);
+    }
+
+    .step-list {
+      list-style: none;
+      margin-top: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .step-list li {
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-start;
+      font-size: 0.875rem;
+      color: var(--text);
+    }
+
+    .step-num {
+      background: var(--blue);
+      color: #fff;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .tip-box {
+      background: rgba(0, 122, 255, 0.07);
+      border-left: 3px solid var(--blue);
+      border-radius: 0 8px 8px 0;
+      padding: 0.6rem 0.85rem;
+      margin-top: 0.85rem;
+      font-size: 0.82rem;
+      color: var(--text);
+    }
+
+    .tip-box strong { color: var(--blue); }
+
+    .warning-box {
+      background: rgba(255, 149, 0, 0.09);
+      border-left: 3px solid var(--orange);
+      border-radius: 0 8px 8px 0;
+      padding: 0.6rem 0.85rem;
+      margin-top: 0.85rem;
+      font-size: 0.82rem;
+      color: var(--text);
+    }
+
+    .warning-box strong { color: var(--orange); }
+
+    .swipe-demo {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.85rem;
+    }
+
+    .swipe-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.85rem;
+    }
+
+    .swipe-arrow {
+      font-size: 1.1rem;
+    }
+
+    .swipe-label {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .swipe-result {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-top: 0.85rem;
+    }
+
+    .faq-item {
+      border-radius: 10px;
+      background: var(--bg);
+      padding: 0.7rem 0.85rem;
+    }
+
+    .faq-q {
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    .faq-a {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+      padding-left: 1.4rem;
+    }
+
+    .platform-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-top: 0.85rem;
+    }
+
+    .platform-block {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 0.75rem 0.9rem;
+    }
+
+    .platform-block h4 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .platform-block ol {
+      padding-left: 1.2rem;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+
+    .chip.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+    }
+
+    /* Icon colour helpers */
+    .ic-blue   { background: rgba(0, 122, 255, 0.12); color: var(--blue); }
+    .ic-green  { background: rgba(52, 199, 89, 0.12); color: var(--green); }
+    .ic-orange { background: rgba(255, 149, 0, 0.12); color: var(--orange); }
+    .ic-red    { background: rgba(255, 59, 48, 0.12);  color: var(--red); }
+    .ic-purple { background: rgba(175, 82, 222, 0.12); color: #af52de; }
+    .ic-teal   { background: rgba(90, 200, 250, 0.15); color: #0a84ff; }
+    .ic-yellow { background: rgba(255, 214, 10, 0.18); color: #c08a00; }
+    .ic-pink   { background: rgba(255, 45, 85, 0.12);  color: #ff2d55; }
+    .ic-gray   { background: rgba(142, 142, 147, 0.14); color: #8e8e93; }
+
+    /* =============================================
+       FOOTER
+       ============================================= */
+    footer {
+      text-align: center;
+      padding: 1.5rem 1rem 2rem;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      border-top: 1px solid var(--border);
+      margin-top: 1rem;
+    }
+
+    footer a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    footer a:hover { text-decoration: underline; }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 0.6rem;
+    }
+
+    .footer-brand {
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="manual-header">
+    <a href="index.html" class="back-link">
+      <i class="fas fa-chevron-left"></i> Volver a la app
+    </a>
+    <h1>📖 Manual de Usuario</h1>
+    <p>MercadoYa v1.0</p>
+  </header>
+
+  <main>
+
+    <!-- INTRO BANNER -->
+    <div class="intro-banner">
+      <div class="intro-icon">🛒</div>
+      <div>
+        <h2>Bienvenido a MercadoYa</h2>
+        <p>Tu lista de compras inteligente, privada y gratuita. Todo funciona directamente en tu dispositivo, sin registros ni servidores.</p>
+      </div>
+    </div>
+
+    <!-- =========================================
+         SECCIÓN 1 — PRIMEROS PASOS
+         ========================================= -->
+    <p class="section-label">📋 Fundamentos</p>
+
+    <details>
+      <summary>
+        <span class="summary-icon ic-blue">🚀</span>
+        <span class="summary-text">
+          <strong>Primeros Pasos</strong>
+          <span>Qué es MercadoYa e instalación</span>
+        </span>
+        <i class="fas fa-chevron-right summary-chevron"></i>
+      </summary>
+      <div class="detail-body">
+        <p><strong>¿Qué es MercadoYa?</strong></p>
+        <ul class="step-list" style="margin-top:0.5rem;">
+          <li><span>✅</span><span>Lista de compras <strong>inteligente</strong> con categorías automáticas</span></li>
+          <li><span>📴</span><span>Las funciones principales pueden funcionar sin conexión una vez cargada y almacenada la app</span></li>
+          <li><span>🔒</span><span><strong>Privada</strong> — tu lista, precios y facturas no se envían al desarrollador</span></li>
+          <li><span>🆓</span><span>Completamente <strong>gratuita</strong>, sin anuncios de terceros ni registro; incluye una promoción de AntSoftDesign</span></li>
+          <li><span>💾</span><span>Histórico de precios guardado con <strong>IndexedDB</strong> local</span></li>
+        </ul>
+
+        <p style="margin-top:1rem;"><strong>📱 Instalar en iPhone (Safari)</strong></p>
+        <div class="platform-steps">
+          <div class="platform-block">
+            <h4><i class="fab fa-apple"></i> iPhone / iPad</h4>
+            <ol>
+              <li>Abre <strong>Safari</strong> y navega a la app</li>
+              <li>Toca el botón <strong>Compartir</strong> <i class="fas fa-share-from-square"></i></li>
+              <li>Desplázate y toca <strong>"Agregar a inicio"</strong></li>
+              <li>Confirma el nombre y pulsa <strong>"Agregar"</strong></li>
+            </ol>
+          </div>
+          <div class="platform-block">
+            <h4><i class="fab fa-android"></i> Android (Chrome)</h4>
+            <ol>
+              <li>Abre <strong>Chrome</strong> y navega a la app</li>
+              <li>Toca el menú <i class="fas fa-ellipsis-vertical"></i> (tres puntos)</li>
+              <li>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a pantalla de inicio"</strong></li>
+              <li>Confirma la instalación</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <strong>💡 Tip:</strong> Una vez instalada como PWA, se abre como app nativa sin barra del navegador y con ícono en tu pantalla de inicio.
+        </div>
+      </div>
+    </details>
+
+    <!-- =========================================
+         SECCIÓN 2 — AGREGAR PRODUCTOS
+         ========================================= -->
+    <details>
+      <summary>
+        <span class="summary-icon ic-green">➕</span>
+        <span class="summary-text">
+          <strong>Agregar Productos</strong>
+          <span>Cómo añadir ítems a tu lista</span>
+        </span>
+        <i class="fas fa-chevron-right summary-chevron"></i>
+      </summary>
+      <div class="detail-body">
+        <p>Agregar un producto es rápido e intuitivo. Sigue estos pasos:</p>
+        <ul class="step-list">
+          <li><span class="step-num">1</span><span>Escribe el <strong>nombre del producto</strong> en el campo de texto superior.</span></li>
+          <li><span class="step-num">2</span><span>La app <strong>detecta automáticamente la categoría</strong> — por ejemplo, "leche" → 🥛 Lácteos.</span></li>
+          <li><span class="step-num">3</span><span>Ajusta la <strong>cantidad</strong> usando el campo numérico (1 por defecto).</span></li>
+          <li><span class="step-num">4</span><span>Agrega el <strong>precio estimado</strong> (opcional, pero útil para el presupuesto).</span></li>
+          <li><span class="step-num">5</span><span>Pulsa el botón <strong>+</strong> o presiona <kbd>Enter</kbd> en el teclado.</span></li>
+        </ul>
+
+        <div class="tip-box">
+          <strong>💡 Sugerencia de precio:</strong> Si la app reconoce el producto porque ya lo compraste antes, mostrará un banner con el último precio registrado. Toca <strong>"Usar"</strong> para aplicarlo automáticamente.
+        </div>
+      </div>
+    </details>
+
+    <!-- =========================================
+         SECCIÓN 3 — CATEGORÍAS Y FILTROS
+         ========================================= -->
+    <details>
+      <summary>
+        <span class="summary-icon ic-orange">🏷️</span>
+        <span class="summary-text">
+          <strong>Categorías y Filtros</strong>
+          <span>Organiza tu lista por tipo de producto</span>
+        </span>
+        <i class="fas fa-chevron-right summary-chevron"></i>
+      </summary>
+      <div class="detail-body">
+        <p>Los chips de categoría cumplen una <strong>doble función</strong>: filtrar la lista y asignar categoría al nuevo producto.</p>
+
+        <div class="chip-row">
+          <span class="chip active">🛒 Todas</span>
+          <span class="chip">🍎 Frutas</span>
+          <span class="chip">🥛 Lácteos</span>
+          <span class="chip">🥩 Carnes</span>
+          <span class="chip">🍞 Panadería</span>
+          <span class="chip">🧹 Limpieza</span>
+          <span class="chip">🥤 Bebidas</span>
+          <span class="chip">📦 Varios</span>
+        </div>
+
+        <ul class="step-list" style="margin-top:0.9rem;">
+          <li><span>🔍</span><span>Toca una categoría para <strong>ver solo esos productos</strong>.</span></li>
+          <li><span>🔄</span><span>Toca <strong>"Todas"</strong> para volver a ver la lista completa.</span></li>
+          <li><span>🏷️</span><span>El <strong>badge de categoría</strong> en cada ítem también sirve como filtro rápido al tocarlo.</span></li>
+          <li><span>✏️</span><span>Si seleccionas una categoría antes de escribir, el nuevo producto se asignará a esa categoría.</span></li>
+        </ul>
+      </div>
+    </details>
+
+    <!-- =========================================
+         SECCIÓN 4 — GESTOS TÁCTILES
+         ========================================= -->
+    <p class="section-label">👆 Interacción táctil</p>
+
+    <details>
+      <summary>
+        <span class="summary-icon ic-purple">👆</span>
+        <span class="summary-text">
+          <strong>Gestos Táctiles (Swipe)</strong>
+          <span>Desliza para actuar sobre los ítems</span>
+        </span>
+        <i class="fas fa-chevron-right summary-chevron"></i>
+      </summary>
+      <div class="detail-body">
+        <p>Desliza los ítems horizontalmente para realizar acciones rápidas:</p>
+
+        <div class="swipe-demo">
+          <div class="swipe-row">
+            <span class="swipe-arrow">👉</span>
+            <span class="swipe-label">Deslizar a la <strong>DERECHA</strong></span>
+            <span class="swipe-result">✅ Marcar comprado</span>
+          </div>
+          <div class="swipe-row">
+            <span class="swipe-arrow">👈</span>
+            <span class="swipe-label">Deslizar a la <strong>IZQUIERDA</strong></span>
+            <span class="swipe-result">🗑️ Eliminar</span>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <strong>💡 Alternativa:</strong> También puedes usar los botones <strong>✓</strong> (completar) y <strong>🗑️</strong> (eliminar) que aparecen a la derecha de cada ítem.
+        </div>
+
+        <p style="margin-top:0.9rem;">La app incluye vibración háptica (si tu dispositivo lo soporta) para confirmar cada acción.</p>
+      </div>
+    </details>
+
+    <!-- =========================================
+         SECCIÓN 5 — PRESUPUESTO Y PRECIOS
+         ========================================= -->
+    <p class="section-label">💰 Presupuesto</p>
+
+    <details>
+      <summary>
+        <span class="summary-icon ic-green">💰</span>
+        <span class="summary-text">
+          <strong>Presupuesto y Precios</strong>
+          <span>Controla cuánto estás gastando</span>
+        </span>
+        <i class="fas fa-chevron-right summary-chevron"></i>
+      </summary>
+      <div class="detail-body">
+        <p>La <strong>tarjeta de presupuesto</strong> en la parte superior muestra en tiempo real:</p>
+        <ul class="step-list" style="margin-top:0.5rem;">
+          <li><span>💵</span><span><strong>Total gastado</strong> — suma de ítems marcados como comprados con precio.</span></li>
+          <li><span>📊</span><span><strong>Total estimado</strong> — suma de todos los precios de la lista.</span></li>
+          <li><span>📈</span><span><strong>Barra de progreso</strong> — muestra avance respecto a la meta de gasto.</span></li>
+        </ul>
+
+        <p style="margin-top:0.85rem;"><strong>Definir una Meta de Gasto:</strong></p>
+        <ul class="step-list">
+          <li><span class="step-num">1</span><span>Toca el botón <strong>"Meta"</strong> o <strong>"Definir Meta"</strong> en la tarjeta.</span></li>
+          <li><span class="step-num">2</span><span>Ingresa el límite de gasto en el campo y guarda.</span></li>
+          <li><span class="step-num">3</span><span>La barra se pone <strong>amarilla al 85 %</strong> y <strong>roja al 100 %</strong>.</span></li>
+        </ul>
+
+        <p style="margin-top:0.85rem;"><strong>Editar el precio de un ítem:</strong></p>
+        <ul class="step-list">
+          <li><span>🔖</span><span>Toca el <strong>tag de precio "$"</strong> que aparece en cada producto.</span></li>
+          <li><span>✏️</span><span>Se abre un modal con nombre, cantidad, precio y tienda para editar.</span></li>
+        </ul>
+
+        <div class="tip-box">
+          <strong>💡 Memoria de precios:</strong> La app recuerda los precios anteriores y los sugiere automáticamente la próxima vez que agregues el mismo producto.
+        </div>
+      </div>
+    </details>
+
+    <!-- =========================================
+         SECCIÓN 6 — HISTÓRICO DE PRECIOS
+         ========================================= -->
+    <details>
+      <summary>
+        <span class="summary-icon ic-teal">📈</span>
+        <span class="summary-text">
+          <strong>Histórico de Precios</strong>
+          <span>Tendencias y evolución de precios</span>
+        </span>
+        <i class="fas fa-chevron-right summary-chevron"></i>
+      </summary>
+      <div class="detail-body">
+        <p>El histórico te permite ver la evolución de precios de todos tus productos con el tiempo.</p>
+
+        <ul class="step-list" style="margin-top:0.75rem;">
+          <li><span class="step-num">1</span><span>Toca el botón <strong>"Precios"</strong> (ícono de etiquetas) en la parte superior.</span></li>
+          <li><span class="step-num">2</span><span>Verás una lista de todos los productos con su <strong>último precio registrado</strong>.</span></li>
+          <li><span class="step-num">3</span><span>Los indicadores de tendencia muestran:
+            <br><strong>↑ Subió</strong> · <strong>↓ Bajó</strong> · <strong>= Estable</strong></span>
+          </li>
+          <li><span class="step-num">4</span><span>Usa la barra de <strong>búsqueda</strong> para filtrar por nombre de producto o tienda.</span></li>
+        </ul>
+
+        <div class="tip-box">
+          <strong>💡 Registros automáticos:</strong> Cada vez que marcas un producto como comprado o editas su precio, se registra automáticamente en el histórico.
+        </div>
+      </div>
+    </details>
+
+    <!-- =========================================
+         SECCIÓN 7 — ESCÁNER DE FACTURAS (OCR)
+         ========================================= -->
+    <p class="section-label">📸 Funciones avanzadas</p>
+
+    <details>
+      <summary>
+        <span class="summary-icon ic-pink">📸</span>
+        <span class="summary-text">
+          <strong>Escáner de Facturas (OCR)</strong>
+          <span>Analiza tickets de caja con la cámara</span>
+        </span>
+        <i class="fas fa-chevron-right summary-chevron"></i>
+      </summary>
+      <div class="detail-body">
+        <p>Fotografía el ticket de tu compra y la app lo compara automáticamente con tu lista.</p>
+
+        <ul class="step-list" style="margin-top:0.75rem;">
+          <li><span class="step-num">1</span><span>Toca el botón <strong>"Factura"</strong> <i class="fas fa-camera"></i> en la tarjeta de presupuesto.</span></li>
+          <li><span class="step-num">2</span><span><strong>Toma una foto</strong> del ticket o selecciona una imagen de tu galería.</span></li>
+          <li><span class="step-num">3</span><span>La app <strong>analiza el texto</strong> del recibo directamente en tu dispositivo (sin internet).</span></li>
+          <li><span class="step-num">4</span><span>Verás qué productos <strong>coinciden</strong> con tu lista, cuáles faltan y cuáles están de más.</span></li>
+          <li><span class="step-num">5</span><span>Toca <strong>"Aplicar a mi lista"</strong> para marcar automáticamente los comprados.</span></li>
+        </ul>
+
+        <div class="warning-box">
+          <strong>⚠️ Nota:</strong> El primer uso del escáner requiere conexión para descargar la librería OCR y los datos de idioma. No se garantiza el escaneo offline posterior en todos los navegadores.
+        </div>
+      </div>
+    </details>
+
+    <!-- =========================================
+         SECCIÓN 8 — COMPARTIR LA LISTA
+         ========================================= -->
+    <details>
+      <summary>
+        <span class="summary-icon ic-blue">📤</span>
+        <span class="summary-text">
+          <strong>Compartir la Lista</strong>
+          <span>Envía tu lista por WhatsApp o correo</span>
+        </span>
+        <i class="fas fa-chevron-right summary-chevron"></i>
+      </summary>
+      <div class="detail-body">
+        <p>Comparte tu lista de compras con familiares o parejas en segundos.</p>
+
+        <ul class="step-list" style="margin-top:0.75rem;">
+          <li><span class="step-num">1</span><span>Toca el botón <strong>"Compartir"</strong> <i class="fas fa-share-alt"></i> en la parte inferior de la pantalla.</span></li>
+          <li><span class="step-num">2</span><span>En <strong>iPhone / Android</strong>: se abre el menú nativo del sistema para elegir la app destino.</span></li>
+          <li><span class="step-num">3</span><span>En <strong>computadora</strong>: el texto se copia automáticamente al portapapeles.</span></li>
+        </ul>
+
+        <div class="tip-box">
+          <strong>📋 Formato del texto compartido:</strong> La lista incluye categorías, cantidades, precios individuales y el total estimado.
+        </div>
+      </div>
+    </details>
+
+    <!-- =========================================
+         SECCIÓN 9 — PRIVACIDAD Y DATOS
+         ========================================= -->
+    <p class="section-label">🔒 Privacidad</p>
+
+    <details>
+      <summary>
+        <span class="summary-icon ic-gray">🔒</span>
+        <span class="summary-text">
+          <strong>Privacidad y Datos</strong>
+          <span>Tu información siempre en tu dispositivo</span>
+        </span>
+        <i class="fas fa-chevron-right summary-chevron"></i>
+      </summary>
+      <div class="detail-body">
+        <ul class="step-list" style="margin-top:0.65rem;">
+          <li><span>🛡️</span><span><strong>Ningún dato sale de tu dispositivo.</strong> No hay servidores, no hay cuentas, no hay rastreo.</span></li>
+          <li><span>💾</span><span>La lista se guarda en <strong>localStorage</strong> del navegador.</span></li>
+          <li><span>📦</span><span>El histórico de precios se almacena en <strong>IndexedDB</strong> (base de datos local del navegador).</span></li>
+        </ul>
+
+        <p style="margin-top:0.85rem;"><strong>¿Cómo borrar todos mis datos?</strong></p>
+        <ul class="step-list">
+          <li><span class="step-num">1</span><span>Ve a <strong>Ajustes</strong> de tu navegador.</span></li>
+          <li><span class="step-num">2</span><span>Entra en <strong>Privacidad</strong> → <strong>Borrar datos del sitio</strong>.</span></li>
+          <li><span class="step-num">3</span><span>Selecciona el sitio de MercadoYa y borra.</span></li>
+        </ul>
+
+        <div class="warning-box">
+          <strong>⚠️ Importante:</strong> Borrar los datos del sitio es irreversible. Todos los productos y el histórico de precios se eliminarán permanentemente.
+        </div>
+      </div>
+    </details>
+
+    <!-- =========================================
+         SECCIÓN 10 — PREGUNTAS FRECUENTES
+         ========================================= -->
+    <p class="section-label">❓ Preguntas Frecuentes</p>
+
+    <details open>
+      <summary>
+        <span class="summary-icon ic-yellow">❓</span>
+        <span class="summary-text">
+          <strong>Preguntas Frecuentes</strong>
+          <span>Respuestas a las dudas más comunes</span>
+        </span>
+        <i class="fas fa-chevron-right summary-chevron"></i>
+      </summary>
+      <div class="detail-body">
+        <div class="faq-list">
+
+          <div class="faq-item">
+            <p class="faq-q">📴 <span>¿Funciona sin internet?</span></p>
+            <p class="faq-a">Las funciones principales están preparadas para trabajar offline después de cargar y almacenar la app. El escáner OCR necesita descargar recursos y su uso offline posterior depende del navegador y la caché.</p>
+          </div>
+
+          <div class="faq-item">
+            <p class="faq-q">💾 <span>¿Se pierden los datos al cerrar?</span></p>
+            <p class="faq-a">No. Los datos se guardan permanentemente en tu dispositivo hasta que los borres manualmente.</p>
+          </div>
+
+          <div class="faq-item">
+            <p class="faq-q">🆓 <span>¿Es de pago?</span></p>
+            <p class="faq-a">Es gratuita y no requiere registro. Incluye una promoción propia de AntSoftDesign, pero no anuncios de terceros.</p>
+          </div>
+
+          <div class="faq-item">
+            <p class="faq-q">💻 <span>¿Puedo usarla en computador?</span></p>
+            <p class="faq-a">Sí, el diseño es responsivo y se adapta a todas las pantallas: móvil, tablet y escritorio.</p>
+          </div>
+
+          <div class="faq-item">
+            <p class="faq-q">🗑️ <span>¿Cómo borro un producto?</span></p>
+            <p class="faq-a">Desliza el ítem hacia la <strong>izquierda</strong> o toca el ícono de <strong>papelera</strong> que aparece a la derecha del producto.</p>
+          </div>
+
+          <div class="faq-item">
+            <p class="faq-q">📲 <span>¿Puedo compartir la lista con otras personas?</span></p>
+            <p class="faq-a">Sí. Toca "Compartir" en la barra inferior y envía el texto por WhatsApp, correo o cualquier app de mensajería.</p>
+          </div>
+
+          <div class="faq-item">
+            <p class="faq-q">🔄 <span>¿Se sincronizan los datos entre dispositivos?</span></p>
+            <p class="faq-a">Sí. Pulsa <strong>Compartir</strong> para enviarla con las opciones del teléfono o copiarla. Esto no sincroniza automáticamente la lista con otro dispositivo; el destinatario recibirá el texto que compartas.</p>
+          </div>
+
+        </div>
+      </div>
+    </details>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <p class="footer-brand">
+      Desarrollado por <a href="https://antsoftdesign.vercel.app/" target="_blank" rel="noopener">AntSoftDesign</a>
+    </p>
+    <div class="footer-links">
+      <a href="privacy.html">Privacidad</a>
+      <a href="terms.html">Términos</a>
+      <a href="disclaimer.html">Aviso Legal</a>
+      <a href="index.html">← Volver a la app</a>
+    </div>
+    <p style="margin-top:0.65rem;opacity:0.6;font-size:0.72rem;">© 2026 MercadoYa · Los datos de la lista y los precios se guardan en este dispositivo</p>
+  </footer>
+
+</body>
+</html>
