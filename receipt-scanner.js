@@ -89,18 +89,35 @@ class ReceiptScanner {
 
     try {
       const img = await this.loadImage(file);
-      const canvas = this.preprocessCanvas(img);
+      const canvases = [
+        { canvas: this.preprocessCanvas(img), pageSegMode: '6' },
+        { canvas: this.preprocessCanvas(img, true), pageSegMode: '11' }
+      ];
 
       if (this.imagePreview) {
         this.imagePreview.src = img.src;
         this.imagePreview.style.display = 'block';
       }
 
-      this.showScanningView('Iniciando lector OCR en el dispositivo...');
-      const rawText = await this.runOCR(canvas);
+      this.showScanningView('Iniciando lector OCR local...');
+      const ocrTexts = await this.runOCR(canvases);
 
       this.showScanningView('Analizando productos y precios...');
-      const parsedItems = this.parseReceiptText(rawText);
+      const candidates = ocrTexts.map((text) => ({
+        text,
+        items: this.parseReceiptText(text)
+      }));
+      const bestCandidate = candidates.reduce((best, candidate) => {
+        const score = (items) => items.reduce((total, item) => {
+          return total + 10 + (item.confidence === 'high' ? 2 : item.confidence === 'medium' ? 1 : 0);
+        }, 0);
+        return score(candidate.items) > score(best.items) ? candidate : best;
+      });
+      const { text: rawText, items: parsedItems } = bestCandidate;
+      const expectedCounts = ocrTexts
+        .map((text) => this.extractExpectedItemCount(text))
+        .filter(Number.isInteger);
+      const expectedItemCount = expectedCounts.length ? Math.max(...expectedCounts) : null;
 
       // Si no detectó suficientes líneas legibles, ofrecer alternativa
       if (parsedItems.length === 0) {
@@ -111,6 +128,8 @@ class ReceiptScanner {
       // Comparar con la lista activa de la app
       const activeTodos = window.getStoredTodos ? window.getStoredTodos() : [];
       const auditResults = this.compareReceiptWithList(parsedItems, activeTodos);
+      auditResults.expectedItemCount = expectedItemCount;
+      auditResults.detectedItemCount = parsedItems.length;
 
       this.currentResults = auditResults;
       this.renderAuditView(auditResults);
@@ -134,7 +153,7 @@ class ReceiptScanner {
     });
   }
 
-  preprocessCanvas(img) {
+  preprocessCanvas(img, useThreshold = false) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
@@ -152,16 +171,59 @@ class ReceiptScanner {
     canvas.height = height;
     ctx.drawImage(img, 0, 0, width, height);
 
-    // Escala de grises con contraste moderado para conservar detalles del ticket.
+    // Generate grayscale and thresholded images locally to handle different receipt paper and lighting.
     const imgData = ctx.getImageData(0, 0, width, height);
     const d = imgData.data;
+    const grayscale = new Uint8Array(width * height);
+    const histogram = new Uint32Array(256);
 
-    for (let i = 0; i < d.length; i += 4) {
-      const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-      const grayscale = Math.max(0, Math.min(255, (gray - 128) * 1.1 + 128));
-      d[i] = grayscale;
-      d[i + 1] = grayscale;
-      d[i + 2] = grayscale;
+    for (let pixel = 0; pixel < grayscale.length; pixel++) {
+      const offset = pixel * 4;
+      const gray = 0.299 * d[offset] + 0.587 * d[offset + 1] + 0.114 * d[offset + 2];
+      const adjusted = Math.max(0, Math.min(255, Math.round((gray - 128) * 1.1 + 128)));
+      grayscale[pixel] = adjusted;
+      histogram[adjusted]++;
+    }
+
+    let threshold = 0;
+    if (useThreshold) {
+      const pixelCount = grayscale.length;
+      let weightedSum = 0;
+      for (let value = 0; value < histogram.length; value++) {
+        weightedSum += value * histogram[value];
+      }
+
+      let backgroundWeight = 0;
+      let backgroundSum = 0;
+      let maxVariance = 0;
+      for (let value = 0; value < histogram.length; value++) {
+        backgroundWeight += histogram[value];
+        if (backgroundWeight === 0) continue;
+
+        const foregroundWeight = pixelCount - backgroundWeight;
+        if (foregroundWeight === 0) break;
+
+        backgroundSum += value * histogram[value];
+        const backgroundMean = backgroundSum / backgroundWeight;
+        const foregroundMean = (weightedSum - backgroundSum) / foregroundWeight;
+        const variance = backgroundWeight * foregroundWeight *
+          (backgroundMean - foregroundMean) ** 2;
+
+        if (variance > maxVariance) {
+          maxVariance = variance;
+          threshold = value;
+        }
+      }
+    }
+
+    for (let pixel = 0; pixel < grayscale.length; pixel++) {
+      const offset = pixel * 4;
+      const value = useThreshold
+        ? (grayscale[pixel] > threshold ? 255 : 0)
+        : grayscale[pixel];
+      d[offset] = value;
+      d[offset + 1] = value;
+      d[offset + 2] = value;
     }
 
     ctx.putImageData(imgData, 0, 0);
@@ -171,7 +233,7 @@ class ReceiptScanner {
   /**
    * Ejecución de OCR en el cliente usando Tesseract.js
    */
-  async runOCR(canvas) {
+  async runOCR(canvases) {
     if (!window.Tesseract) {
       // Carga dinámica de la librería si no estuviese en el HTML
       await this.loadTesseractScript();
@@ -195,13 +257,26 @@ class ReceiptScanner {
       await worker.initialize('spa');
       this.isWorkerReady = true;
 
-      const ret = await worker.recognize(canvas);
-      return ret.data.text || '';
+      const results = [];
+      for (const [index, variant] of canvases.entries()) {
+        await worker.setParameters({ tessedit_pageseg_mode: variant.pageSegMode });
+        if (this.progressText) {
+          this.progressText.innerText = `Probando lectura ${index + 1} de ${canvases.length}...`;
+        }
+        const ret = await worker.recognize(variant.canvas);
+        results.push(ret.data.text || '');
+      }
+      return results;
     } finally {
       this.isWorkerReady = false;
       this.worker = null;
       await worker.terminate();
     }
+  }
+
+  extractExpectedItemCount(rawText) {
+    const match = rawText.match(/\bTOTAL\s+[A-ZÁÉÍÓÚÑ]{0,8}\s*:?\s*(\d{1,3})\b/i);
+    return match ? parseInt(match[1], 10) : null;
   }
 
   loadTesseractScript() {
@@ -228,38 +303,132 @@ class ReceiptScanner {
       'cif', 'nif', 'supermercado', 'caja', 'terminal', 'importe', 'dto', 'descuento'
     ];
 
-    // Expresión regular para detectar precios al final de la línea: ej. "12.50", "3,40", "1.99"
-    const priceRegex = /(\d+[\.,]\d{2})\s*$/;
+    const usesGroupedThousands = (rawText.match(/\b\d{1,3}[.,]\d{3}\b/g) || []).length >= 2;
+    const amountAtEnd = /(?:[$€]\s*)?(\d[\d.,]*)\s*$/;
+    const quantityUnit = /(?:^|\s)(\d+(?:[.,]\d+)?)\s*(UN|UND|UNID|U|KG|KGS|G|GR|L|LT|ML|LB)\b/i;
 
     for (let line of lines) {
       line = line.trim();
       if (line.length < 4) continue;
 
       const lower = line.toLowerCase();
-      const hasIgnore = ignoreKeywords.some((kw) => lower.startsWith(kw) || lower.includes(` ${kw} `));
+      const hasIgnore = ignoreKeywords.some((kw) => lower.startsWith(kw));
       if (hasIgnore) continue;
 
-      const match = line.match(priceRegex);
-      if (match) {
-        const priceStr = match[1].replace(',', '.');
-        const price = parseFloat(priceStr);
-        let name = line.substring(0, match.index).trim();
+      const totalMatch = line.match(amountAtEnd);
+      if (!totalMatch) continue;
 
-        // Limpiar códigos de barras o números al inicio
-        name = name.replace(/^[\d\s\-\*]+/, '').trim();
+      const lineTotal = this.parseReceiptAmount(totalMatch[1]);
+      if (!Number.isFinite(lineTotal) || lineTotal <= 0 || lineTotal > 100000000) continue;
 
-        if (name.length >= 2 && price > 0 && price < 500) {
-          items.push({
-            name: name,
-            normalizedName: this.normalizeString(name),
-            price: price,
-            rawLine: line
-          });
+      let beforeTotal = line.slice(0, totalMatch.index).trim();
+      const quantityMatch = beforeTotal.match(quantityUnit);
+      let name = '';
+      let quantity = 1;
+      let unit = 'UN';
+      let unitPrice = lineTotal;
+      let hasSeparateUnitPrice = false;
+
+      if (quantityMatch) {
+        name = beforeTotal.slice(0, quantityMatch.index).trim();
+        quantity = parseFloat(quantityMatch[1].replace(',', '.'));
+        unit = quantityMatch[2].toUpperCase();
+
+        const trailingAmount = beforeTotal.slice(quantityMatch.index + quantityMatch[0].length).match(amountAtEnd);
+        if (trailingAmount) {
+          unitPrice = this.parseReceiptAmount(trailingAmount[1]);
+          hasSeparateUnitPrice = Number.isFinite(unitPrice) && unitPrice > 0;
+        } else if (quantity > 0) {
+          unitPrice = lineTotal / quantity;
         }
+      } else {
+        const trailingAmount = beforeTotal.match(amountAtEnd);
+        if (trailingAmount) {
+          beforeTotal = beforeTotal.slice(0, trailingAmount.index).trim();
+        }
+        name = beforeTotal;
       }
+
+      name = name
+        .replace(/^\d{6,14}\s+/, '')
+        .replace(/^\d{1,3}\s+/, '')
+        .replace(/^[\d\s#*.-]+/, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (name.length < 2 || !/[a-záéíóúñ]{2}/i.test(name)) continue;
+
+      const expectedLineTotal = unitPrice * quantity;
+      const amountDifference = Math.abs(expectedLineTotal - lineTotal);
+      const confidence = quantityMatch && hasSeparateUnitPrice &&
+        amountDifference <= Math.max(2, lineTotal * 0.02)
+        ? 'high'
+        : quantityMatch && hasSeparateUnitPrice
+          ? 'low'
+          : 'medium';
+      const ambiguousLocale = usesGroupedThousands &&
+        /[.,]\d{1,2}$/.test(totalMatch[1]);
+
+      items.push({
+        name,
+        normalizedName: this.normalizeString(name),
+        price: lineTotal,
+        lineTotal,
+        unitPrice,
+        quantity,
+        unit,
+        confidence: ambiguousLocale ? 'low' : confidence,
+        needsReview: ambiguousLocale || confidence !== 'high',
+        priceRaw: totalMatch[1],
+        rawLine: line
+      });
     }
 
     return items;
+  }
+
+  parseReceiptAmount(rawAmount) {
+    let value = String(rawAmount || '').replace(/[^\d.,]/g, '');
+    if (!value || !/\d/.test(value)) return NaN;
+
+    const lastDot = value.lastIndexOf('.');
+    const lastComma = value.lastIndexOf(',');
+    const lastSeparator = Math.max(lastDot, lastComma);
+
+    if (lastSeparator === -1) return Number(value);
+
+    const separator = value[lastSeparator];
+    const digitsAfter = value.length - lastSeparator - 1;
+    const separatorCount = (value.match(/[.,]/g) || []).length;
+
+    if (separatorCount > 1) {
+      const integerPart = value.slice(0, lastSeparator).replace(/[.,]/g, '');
+      const decimalPart = value.slice(lastSeparator + 1);
+      if (digitsAfter === 3) return Number(integerPart + decimalPart);
+      return Number(`${integerPart}.${decimalPart}`);
+    }
+
+    const integerPart = value.slice(0, lastSeparator);
+    const fractionalPart = value.slice(lastSeparator + 1);
+    if (digitsAfter === 3) return Number(integerPart + fractionalPart);
+    if (digitsAfter <= 2) return Number(`${integerPart}.${fractionalPart}`);
+    return separator === '.' ? Number(value.replace(/\./g, '')) : Number(value.replace(/,/g, ''));
+  }
+
+  formatReceiptCurrency(amount) {
+    return `$${new Intl.NumberFormat('es-CO', {
+      maximumFractionDigits: 2
+    }).format(amount)}`;
+  }
+
+  escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[character]);
   }
 
   normalizeString(str) {
@@ -316,9 +485,9 @@ class ReceiptScanner {
     const missing = listItems.filter((item) => !matchedListIds.has(item.id));
 
     // Cálculos de totales
-    const totalTicket = ticketItems.reduce((sum, item) => sum + item.price, 0);
-    const plannedMatchedTotal = matches.reduce((sum, m) => sum + (m.listItem.price > 0 ? m.listItem.price * (m.listItem.quantity || 1) : m.ticketItem.price), 0);
-    const impulseTotal = unlisted.reduce((sum, item) => sum + item.price, 0);
+    const totalTicket = ticketItems.reduce((sum, item) => sum + item.lineTotal, 0);
+    const plannedMatchedTotal = matches.reduce((sum, m) => sum + (m.listItem.price > 0 ? m.listItem.price * (m.listItem.quantity || 1) : m.ticketItem.lineTotal), 0);
+    const impulseTotal = unlisted.reduce((sum, item) => sum + item.lineTotal, 0);
 
     return {
       matches,
@@ -376,7 +545,7 @@ class ReceiptScanner {
         </div>
         <div class="audit-stat-chip stat-impulse">
           <i class="fas fa-exclamation-triangle"></i>
-          <span><strong>${data.unlisted.length}</strong> Imprevistos (+$${data.impulseTotal.toFixed(2)})</span>
+          <span><strong>${data.unlisted.length}</strong> Imprevistos (+${this.formatReceiptCurrency(data.impulseTotal)})</span>
         </div>
         <div class="audit-stat-chip stat-missing">
           <i class="fas fa-question-circle"></i>
@@ -385,7 +554,15 @@ class ReceiptScanner {
       `;
     }
 
-    let html = '';
+    const incompleteReceipt = data.expectedItemCount && data.detectedItemCount < data.expectedItemCount;
+    let html = `
+      <div class="audit-review-notice ${incompleteReceipt ? 'audit-review-warning' : ''}">
+        <strong>${incompleteReceipt ? 'Lectura incompleta' : 'Revisa antes de confirmar'}</strong>
+        <span>${incompleteReceipt
+          ? `La factura indica ${data.expectedItemCount} artículos; el OCR detectó ${data.detectedItemCount}. Puede haber líneas faltantes.`
+          : 'El OCR puede equivocarse. Confirma manualmente cada línea que quieras registrar.'}</span>
+      </div>
+    `;
 
     // 1. Coincidentes (Verde)
     if (data.matches.length > 0) {
@@ -398,14 +575,19 @@ class ReceiptScanner {
         html += `
           <div class="audit-card card-match">
             <div class="audit-card-info">
-              <span class="audit-card-name">${m.listItem.text}</span>
-              <span class="audit-card-sub">En ticket: "${m.ticketItem.name}"</span>
+              <span class="audit-card-name">${this.escapeHTML(m.listItem.text)}</span>
+              <span class="audit-card-sub">En factura: "${this.escapeHTML(m.ticketItem.name)}"</span>
+              ${m.ticketItem.confidence !== 'high' ? '<span class="audit-confidence-warning">Verifica el importe</span>' : ''}
+              <label class="audit-review-field">Total de la línea
+                <input type="text" inputmode="decimal" class="audit-match-total" data-index="${idx}" value="${m.ticketItem.lineTotal}" aria-label="Total de factura para ${this.escapeHTML(m.listItem.text)}" />
+              </label>
             </div>
             <div class="audit-card-price">
-              <span class="audit-price-tag">$${m.ticketItem.price.toFixed(2)}</span>
-              <label class="audit-checkbox-label">
-                <input type="checkbox" class="audit-match-check" data-index="${idx}" checked />
+              <span class="audit-price-tag">${this.formatReceiptCurrency(m.ticketItem.lineTotal)}</span>
+              <label class="audit-add-label">
+                <input type="checkbox" class="audit-match-check" data-index="${idx}" />
                 <span class="custom-check"></span>
+                <span>Confirmar</span>
               </label>
             </div>
           </div>
@@ -426,14 +608,20 @@ class ReceiptScanner {
         html += `
           <div class="audit-card card-impulse">
             <div class="audit-card-info">
-              <span class="audit-card-name">${u.name}</span>
-              <span class="audit-card-sub">Cobrado en ticket</span>
+              <label class="audit-review-field">Producto detectado
+                <input type="text" class="audit-edit-name" data-index="${idx}" value="${this.escapeHTML(u.name)}" aria-label="Nombre del producto detectado" />
+              </label>
+              <span class="audit-card-sub">${u.quantity} ${this.escapeHTML(u.unit)} · Total de línea</span>
+              ${u.confidence !== 'high' ? '<span class="audit-confidence-warning">Verifica nombre e importe</span>' : ''}
+              <label class="audit-review-field">Total de la línea
+                <input type="text" inputmode="decimal" class="audit-unlisted-total" data-index="${idx}" value="${u.lineTotal}" aria-label="Total de factura para producto detectado" />
+              </label>
             </div>
             <div class="audit-card-price">
-              <span class="audit-price-tag impulse-price">+$${u.price.toFixed(2)}</span>
+              <span class="audit-price-tag impulse-price">+${this.formatReceiptCurrency(u.lineTotal)}</span>
               <label class="audit-add-label" title="¿Agregar a tu histórico?">
-                <input type="checkbox" class="audit-unlisted-check" data-index="${idx}" checked />
-                <span>Registrar</span>
+                <input type="checkbox" class="audit-unlisted-check" data-index="${idx}" />
+                <span>Confirmar</span>
               </label>
             </div>
           </div>
@@ -452,7 +640,7 @@ class ReceiptScanner {
       data.missing.forEach((miss) => {
         html += `
           <div class="audit-card card-missing">
-            <span class="audit-card-name">${miss.text}</span>
+            <span class="audit-card-name">${this.escapeHTML(miss.text)}</span>
             <span class="audit-badge-missing">Pendiente</span>
           </div>
         `;
@@ -470,50 +658,75 @@ class ReceiptScanner {
     if (!this.currentResults) return;
 
     const todos = window.getStoredTodos ? window.getStoredTodos() : [];
-    const matchChecks = document.querySelectorAll('.audit-match-check:checked');
-    const unlistedChecks = document.querySelectorAll('.audit-unlisted-check:checked');
+    const matchChecks = [...document.querySelectorAll('.audit-match-check:checked')];
+    const unlistedChecks = [...document.querySelectorAll('.audit-unlisted-check:checked')];
+    if (matchChecks.length + unlistedChecks.length === 0) {
+      alert('Confirma al menos una línea revisada antes de aplicarla.');
+      return;
+    }
+
+    const reviewedMatches = matchChecks.map((checkbox) => {
+      const idx = parseInt(checkbox.dataset.index, 10);
+      const match = this.currentResults.matches[idx];
+      const amountInput = this.auditContainer.querySelector(`.audit-match-total[data-index="${idx}"]`);
+      const lineTotal = this.parseReceiptAmount(amountInput?.value);
+      return { match, lineTotal };
+    });
+    const reviewedUnlisted = unlistedChecks.map((checkbox) => {
+      const idx = parseInt(checkbox.dataset.index, 10);
+      const item = this.currentResults.unlisted[idx];
+      const card = checkbox.closest('.audit-card');
+      const name = card?.querySelector('.audit-edit-name')?.value.trim();
+      const lineTotal = this.parseReceiptAmount(card?.querySelector('.audit-unlisted-total')?.value);
+      return { item, name, lineTotal };
+    });
+
+    if (reviewedMatches.some(({ match, lineTotal }) => !match || !Number.isFinite(lineTotal) || lineTotal <= 0) ||
+      reviewedUnlisted.some(({ item, name, lineTotal }) => !item || !name || !Number.isFinite(lineTotal) || lineTotal <= 0)) {
+      alert('Revisa que cada producto confirmado tenga un nombre y un importe válido.');
+      return;
+    }
 
     let updatedCount = 0;
 
     // 1. Actualizar ítems coincidentes a "Completado" y registrar precio real
-    for (const chk of matchChecks) {
-      const idx = parseInt(chk.dataset.index, 10);
-      const match = this.currentResults.matches[idx];
-      if (match) {
-        const target = todos.find((t) => t.id === match.listItem.id);
-        if (target) {
-          target.completed = true;
-          target.price = match.ticketItem.price;
-          updatedCount++;
+    for (const { match, lineTotal } of reviewedMatches) {
+      const target = todos.find((t) => t.id === match.listItem.id);
+      if (target) {
+        const quantityIsEach = match.ticketItem.unit === 'UN' && Number.isInteger(match.ticketItem.quantity);
+        const quantity = quantityIsEach ? match.ticketItem.quantity : 1;
+        const actualPrice = quantityIsEach ? lineTotal / quantity : lineTotal;
+        target.completed = true;
+        target.quantity = quantity;
+        target.price = actualPrice;
+        updatedCount++;
 
-          if (window.mercadoDB) {
-            await window.mercadoDB.recordPrice(target.text, target.price, target.category, 'Factura');
-          }
+        if (window.mercadoDB) {
+          await window.mercadoDB.recordPrice(target.text, actualPrice, target.category, 'Factura');
         }
       }
     }
 
     // 2. Registrar compras de impulso seleccionadas
-    for (const chk of unlistedChecks) {
-      const idx = parseInt(chk.dataset.index, 10);
-      const unlisted = this.currentResults.unlisted[idx];
-      if (unlisted) {
-        const newImpulseItem = {
-          id: `impulse_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-          text: unlisted.name,
-          completed: true,
-          category: 'general',
-          quantity: 1,
-          price: unlisted.price,
-          store: 'Factura',
-          createdAt: Date.now()
-        };
-        todos.unshift(newImpulseItem);
-        updatedCount++;
+    for (const { item, name, lineTotal } of reviewedUnlisted) {
+      const quantityIsEach = item.unit === 'UN' && Number.isInteger(item.quantity);
+      const quantity = quantityIsEach ? item.quantity : 1;
+      const actualPrice = quantityIsEach ? lineTotal / quantity : lineTotal;
+      const newImpulseItem = {
+        id: `impulse_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        text: name,
+        completed: true,
+        category: 'general',
+        quantity,
+        price: actualPrice,
+        store: 'Factura',
+        createdAt: Date.now()
+      };
+      todos.unshift(newImpulseItem);
+      updatedCount++;
 
-        if (window.mercadoDB) {
-          await window.mercadoDB.recordPrice(unlisted.name, unlisted.price, 'general', 'Factura');
-        }
+      if (window.mercadoDB) {
+        await window.mercadoDB.recordPrice(name, actualPrice, 'general', 'Factura');
       }
     }
 
@@ -546,7 +759,7 @@ class ReceiptScanner {
         <p class="empty-desc">La imagen puede estar borrosa, con reflejos o poca luz. Puedes intentar tomar otra foto con mejor iluminación y plana.</p>
         <div style="width: 100%; margin-top: 1rem; text-align: left;">
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Texto detectado del ticket:</label>
-          <textarea style="width: 100%; height: 90px; border-radius: 12px; border: 1px solid var(--item-border); background: var(--item-bg); padding: 0.5rem; font-family: monospace; font-size: 0.75rem; margin-top: 0.35rem; color: var(--text-primary); resize: none;" readonly>${rawText || '(Vacío)'}</textarea>
+          <textarea style="width: 100%; height: 90px; border-radius: 12px; border: 1px solid var(--item-border); background: var(--item-bg); padding: 0.5rem; font-family: monospace; font-size: 0.75rem; margin-top: 0.35rem; color: var(--text-primary); resize: none;" readonly>${this.escapeHTML(rawText || '(Vacío)')}</textarea>
         </div>
       </div>
     `;
@@ -562,7 +775,7 @@ class ReceiptScanner {
       <div class="empty-state visible">
         <i class="fas fa-times-circle" style="font-size: 2.5rem; color: var(--destructive-color);"></i>
         <p class="empty-title" style="margin-top: 0.5rem;">Error en la lectura</p>
-        <p class="empty-desc">${msg}</p>
+        <p class="empty-desc">${this.escapeHTML(msg)}</p>
       </div>
     `;
     if (this.applyBtn) this.applyBtn.style.display = 'none';

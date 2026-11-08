@@ -12,6 +12,7 @@ const CATEGORIES = {
   lacteos: { label: 'Lácteos y Huevos', icon: 'fa-egg', badgeClass: 'badge-lacteos' },
   carnes: { label: 'Carnes', icon: 'fa-drumstick-bite', badgeClass: 'badge-carnes' },
   panaderia: { label: 'Panadería', icon: 'fa-bread-slice', badgeClass: 'badge-panaderia' },
+  despensa: { label: 'Despensa', icon: 'fa-basket-shopping', badgeClass: 'badge-despensa' },
   limpieza: { label: 'Limpieza', icon: 'fa-pump-soap', badgeClass: 'badge-limpieza' },
   bebidas: { label: 'Bebidas', icon: 'fa-wine-bottle', badgeClass: 'badge-bebidas' }
 };
@@ -20,10 +21,40 @@ const KEYWORD_MAP = {
   frutas: ['manzana', 'banana', 'platano', 'pera', 'naranja', 'limon', 'fresa', 'uva', 'tomate', 'lechuga', 'papa', 'cebolla', 'zanahoria', 'aguacate', 'palta', 'espinaca', 'fruta', 'verdura', 'brocoli', 'sandia', 'melon', 'pina', 'mango', 'pepino'],
   lacteos: ['leche', 'queso', 'yogur', 'yogurt', 'huevo', 'huevos', 'mantequilla', 'crema', 'suero', 'parmesano', 'mozzarella'],
   carnes: ['carne', 'pollo', 'pescado', 'res', 'cerdo', 'jamon', 'salchicha', 'atun', 'salmon', 'molida', 'tocino', 'chuleta', 'pavo'],
-  panaderia: ['pan', 'arroz', 'pasta', 'fideo', 'harina', 'avena', 'cereal', 'galleta', 'tostada', 'bagel', 'tortilla', 'panqueque', 'croissant'],
-  limpieza: ['jabon', 'detergente', 'cloro', 'lavaloza', 'papel', 'toalla', 'shampoo', 'champu', 'pasta dental', 'cepillo', 'limpiador', 'suavizante', 'esponja', 'lavandina', 'desinfectante'],
+  panaderia: ['pan', 'bagel', 'tostada', 'tortilla', 'panqueque', 'croissant'],
+  despensa: ['arroz', 'pasta', 'fideo', 'harina', 'avena', 'cereal', 'galleta', 'frijol', 'lenteja', 'azucar', 'sal', 'aceite', 'maiz', 'salsa', 'conserva'],
+  limpieza: ['jabon', 'detergente', 'cloro', 'lavaloza', 'lava loza', 'papel', 'toalla', 'shampoo', 'champu', 'pasta dental', 'cepillo', 'limpiador', 'suavizante', 'esponja', 'lavandina', 'desinfectante', 'trapero', 'trapeador', 'escoba', 'mopa', 'recogedor', 'balde'],
   bebidas: ['agua', 'jugo', 'gaseosa', 'refresco', 'soda', 'coca', 'pepsi', 'cerveza', 'vino', 'cafe', 'te', 'licor', 'whisky', 'energetica']
 };
+
+function normalizeCategoryText(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function detectProductCategory(text) {
+  const normalizedText = ` ${normalizeCategoryText(text)} `;
+  let matchedCategory = 'general';
+  let longestMatch = 0;
+
+  for (const [category, keywords] of Object.entries(KEYWORD_MAP)) {
+    for (const keyword of keywords) {
+      const normalizedKeyword = normalizeCategoryText(keyword);
+      if (normalizedKeyword.length > longestMatch &&
+        normalizedText.includes(` ${normalizedKeyword} `)) {
+        matchedCategory = category;
+        longestMatch = normalizedKeyword.length;
+      }
+    }
+  }
+
+  return matchedCategory;
+}
 
 const STORAGE_KEY = 'todos';
 
@@ -397,14 +428,7 @@ async function handleInputChange(e) {
 
   // 1. Autocategorización inteligente
   if (!manualCategorySelected || currentCategoryFilter === 'all') {
-    let matchedCategory = 'general';
-    const lower = text.toLowerCase();
-    for (const [category, keywords] of Object.entries(KEYWORD_MAP)) {
-      if (keywords.some((kw) => lower.includes(kw))) {
-        matchedCategory = category;
-        break;
-      }
-    }
+    const matchedCategory = detectProductCategory(text);
     selectedCategory = matchedCategory;
 
     if (currentCategoryFilter === 'all') {

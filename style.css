@@ -29,6 +29,7 @@
   --cat-lacteos: #ff9500;
   --cat-carnes: #ff3b30;
   --cat-panaderia: #af52de;
+  --cat-despensa: #8a6d3b;
   --cat-limpieza: #007aff;
   --cat-bebidas: #5856d6;
 
@@ -522,6 +523,7 @@ body {
 .badge-lacteos { background: rgba(255, 149, 0, 0.15); color: var(--cat-lacteos); }
 .badge-carnes { background: rgba(255, 59, 48, 0.14); color: var(--cat-carnes); }
 .badge-panaderia { background: rgba(175, 82, 222, 0.14); color: var(--cat-panaderia); }
+.badge-despensa { background: rgba(138, 109, 59, 0.14); color: var(--cat-despensa); }
 .badge-limpieza { background: rgba(0, 122, 255, 0.14); color: var(--cat-limpieza); }
 .badge-bebidas { background: rgba(88, 86, 214, 0.14); color: var(--cat-bebidas); }
 
@@ -1708,6 +1710,27 @@ body {
   padding-right: 2px;
 }
 
+.audit-review-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(0, 122, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(0, 122, 255, 0.08);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.audit-review-notice strong {
+  color: var(--text-primary);
+}
+
+.audit-review-notice.audit-review-warning {
+  border-color: rgba(255, 149, 0, 0.35);
+  background: rgba(255, 149, 0, 0.12);
+}
+
 .audit-group {
   display: flex;
   flex-direction: column;
@@ -1767,6 +1790,7 @@ body {
   flex-direction: column;
   gap: 0.15rem;
   flex: 1;
+  min-width: 0;
 }
 
 .audit-card-name {
@@ -1778,10 +1802,48 @@ body {
 .audit-card-sub {
   font-size: 0.75rem;
   color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.audit-review-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.audit-edit-name,
+.audit-match-total,
+.audit-unlisted-total {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--item-border);
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  background: var(--item-bg);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.audit-confidence-warning {
+  color: #b35d00;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .audit-confidence-warning {
+    color: #ffb84d;
+  }
 }
 
 .audit-card-price {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 0.65rem;
 }
@@ -1835,4 +1897,16 @@ body {
 .audit-add-label input[type="checkbox"] {
   accent-color: var(--primary-accent);
   cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .audit-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .audit-card-price {
+    flex-direction: row;
+    justify-content: space-between;
+  }
 }
