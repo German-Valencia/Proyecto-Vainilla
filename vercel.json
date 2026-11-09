@@ -1,6 +1,12 @@
 {
   "version": 2,
-  "cleanUrls": true,
+  "cleanUrls": false,
+  "rewrites": [
+    { "source": "/manual", "destination": "/manual.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/disclaimer", "destination": "/disclaimer.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

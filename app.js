@@ -315,7 +315,10 @@ function registerServiceWorker() {
     window.addEventListener('load', () => {
       navigator.serviceWorker
         .register('./sw.js')
-        .then((reg) => console.log('SW activo:', reg.scope))
+        .then((reg) => {
+          console.log('SW activo:', reg.scope);
+          reg.update(); // Fuerza al navegador a comprobar actualizaciones de inmediato
+        })
         .catch((err) => console.warn('SW error:', err));
     });
   }

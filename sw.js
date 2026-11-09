@@ -3,7 +3,7 @@
  * Proporciona soporte 100% Offline y almacenamiento en caché para iPhone y navegadores modernos.
  */
 
-const CACHE_NAME = 'mercadoya-v11';
+const CACHE_NAME = 'mercadoya-v12';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -30,7 +30,6 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // UsaraddAll con tolerancia para recursos externos
       return Promise.allSettled(
         ASSETS_TO_CACHE.map((url) =>
           cache.add(url).catch((err) => {
@@ -42,7 +41,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activación: Limpieza de cachés antiguas
+// Activación: Limpieza de cachés antiguas y toma de control inmediata
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -59,14 +58,42 @@ self.addEventListener('activate', (event) => {
 
 // Intercepción de solicitudes de red con estrategia Stale-While-Revalidate
 self.addEventListener('fetch', (event) => {
-  // Solo interceptar peticiones GET
   if (event.request.method !== 'GET') return;
 
+  const url = new URL(event.request.url);
+  const path = url.pathname.toLowerCase();
+
+  // Enrutamiento especial para navegación HTML (evita redirecciones erróneas en Vercel)
+  if (event.request.mode === 'navigate') {
+    let targetAsset = './index.html';
+    if (path.includes('manual')) targetAsset = './manual.html';
+    else if (path.includes('privacy')) targetAsset = './privacy.html';
+    else if (path.includes('terms')) targetAsset = './terms.html';
+    else if (path.includes('disclaimer')) targetAsset = './disclaimer.html';
+
+    event.respondWith(
+      caches.match(targetAsset).then((cached) => {
+        const networkFetch = fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const responseClone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(targetAsset, responseClone));
+            }
+            return networkResponse;
+          })
+          .catch(() => cached);
+
+        return cached || networkFetch;
+      })
+    );
+    return;
+  }
+
+  // Recursos estáticos generales (CSS, JS, iconos, fuentes)
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
+    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
       const fetchPromise = fetch(event.request)
         .then((networkResponse) => {
-          // Si la respuesta es válida, clonar y actualizar caché
           if (
             networkResponse &&
             (networkResponse.status === 200 || networkResponse.type === 'opaque' || networkResponse.type === 'cors' || networkResponse.type === 'basic')
@@ -78,20 +105,8 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => {
-          // Si la red falla y no está en caché, devolver fallback para navegación inteligente
-          if (event.request.mode === 'navigate') {
-            const url = new URL(event.request.url);
-            const path = url.pathname.toLowerCase();
-            if (path.includes('manual')) return caches.match('./manual.html');
-            if (path.includes('privacy')) return caches.match('./privacy.html');
-            if (path.includes('terms')) return caches.match('./terms.html');
-            if (path.includes('disclaimer')) return caches.match('./disclaimer.html');
-            return caches.match('./index.html');
-          }
-        });
+        .catch(() => cachedResponse);
 
-      // Devolver inmediatamente desde caché si existe, sino esperar a la red
       return cachedResponse || fetchPromise;
     })
   );
