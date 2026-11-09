@@ -3,7 +3,7 @@
  * Proporciona soporte 100% Offline y almacenamiento en caché para iPhone y navegadores modernos.
  */
 
-const CACHE_NAME = 'mercadoya-v12';
+const CACHE_NAME = 'mercadoya-v13';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -23,7 +23,11 @@ const ASSETS_TO_CACHE = [
   './icon-512.png',
   './og-image.png',
   'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
+  './vendor/fontawesome/css/all.min.css',
+  './vendor/fontawesome/webfonts/fa-solid-900.woff2',
+  './vendor/fontawesome/webfonts/fa-solid-900.ttf',
+  './vendor/fontawesome/webfonts/fa-brands-400.woff2',
+  './vendor/fontawesome/webfonts/fa-regular-400.woff2'
 ];
 
 // Instalación: Precaché de activos esenciales
