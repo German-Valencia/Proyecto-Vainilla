@@ -221,16 +221,27 @@
         <!-- Input Form with Category, Quantity & Price Selectors -->
         <form id="todo-form" class="todo-form" autocomplete="off" aria-label="Agregar producto a la lista">
           <div class="input-wrapper">
-            <input
-              type="text"
-              id="todo-input"
-              class="todo-input"
-              placeholder="¿Qué necesitas comprar hoy?"
-              aria-label="Nombre del producto a comprar"
-              autocapitalize="sentences"
-              enterkeyhint="next"
-              required
-            />
+            <div class="input-main-row">
+              <input
+                type="text"
+                id="todo-input"
+                class="todo-input"
+                placeholder="¿Qué necesitas comprar hoy?"
+                aria-label="Nombre del producto a comprar"
+                autocapitalize="sentences"
+                enterkeyhint="next"
+                required
+              />
+              <button
+                type="submit"
+                id="todo-button"
+                class="todo-button"
+                aria-label="Agregar producto a la lista"
+                title="Agregar (Enter)"
+              >
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
             <div class="addon-group">
               <div class="input-addon qty-addon" title="Cantidad">
                 <input
@@ -259,15 +270,6 @@
                 />
               </div>
             </div>
-            <button
-              type="submit"
-              id="todo-button"
-              class="todo-button"
-              aria-label="Agregar producto a la lista"
-              title="Agregar (Enter)"
-            >
-              <i class="fas fa-plus"></i>
-            </button>
           </div>
 
           <!-- Price History Hint (When previously recorded price is found) -->
@@ -498,6 +500,19 @@
             <div class="form-group">
               <label for="edit-item-name" class="form-label">Nombre del producto</label>
               <input type="text" id="edit-item-name" class="modal-input text-left" required />
+            </div>
+            <div class="form-group">
+              <label for="edit-item-category" class="form-label">Pasillo / Categoría</label>
+              <select id="edit-item-category" class="modal-input text-left">
+                <option value="frutas">🍎 Frutas y Verduras</option>
+                <option value="lacteos">🥚 Lácteos y Huevos</option>
+                <option value="carnes">🍗 Carnes y Pescados</option>
+                <option value="panaderia">🍞 Panadería</option>
+                <option value="despensa">🧺 Despensa</option>
+                <option value="limpieza">🧼 Limpieza y Aseo</option>
+                <option value="bebidas">🍾 Bebidas</option>
+                <option value="general">📦 Varios</option>
+              </select>
             </div>
             <div class="form-row">
               <div class="form-group flex-1">

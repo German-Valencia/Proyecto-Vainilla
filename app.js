@@ -8,25 +8,113 @@
 // ==========================================
 const CATEGORIES = {
   general: { label: 'Varios', icon: 'fa-box', badgeClass: 'badge-general' },
-  frutas: { label: 'Frutas', icon: 'fa-apple-alt', badgeClass: 'badge-frutas' },
+  frutas: { label: 'Frutas y Verduras', icon: 'fa-apple-alt', badgeClass: 'badge-frutas' },
   lacteos: { label: 'Lácteos y Huevos', icon: 'fa-egg', badgeClass: 'badge-lacteos' },
-  carnes: { label: 'Carnes', icon: 'fa-drumstick-bite', badgeClass: 'badge-carnes' },
+  carnes: { label: 'Carnes y Pescados', icon: 'fa-drumstick-bite', badgeClass: 'badge-carnes' },
   panaderia: { label: 'Panadería', icon: 'fa-bread-slice', badgeClass: 'badge-panaderia' },
   despensa: { label: 'Despensa', icon: 'fa-basket-shopping', badgeClass: 'badge-despensa' },
-  limpieza: { label: 'Limpieza', icon: 'fa-pump-soap', badgeClass: 'badge-limpieza' },
+  limpieza: { label: 'Limpieza y Aseo', icon: 'fa-pump-soap', badgeClass: 'badge-limpieza' },
   bebidas: { label: 'Bebidas', icon: 'fa-wine-bottle', badgeClass: 'badge-bebidas' }
 };
 
+// ==========================================
+// Motor Inteligente de Clasificación de Productos
+// ==========================================
+
+// Reglas de desambiguación para frases compuestas (prioridad máxima)
+const COMPOUND_RULES = [
+  // Bebidas preparadas / jugos / refrescos
+  { regex: /\b(jugo|zumo|nectar|agua|refresco|gaseosa|batido|smoothie|soda)\s+de\s+[a-z]+/i, category: 'bebidas' },
+  { regex: /\b(leche\s+de\s+(soya|soja|almendra|coco|avena|arroz))\b/i, category: 'bebidas' },
+  { regex: /\b(te\s+de\s+[a-z]+|infusion\s+de\s+[a-z]+|aromatica)\b/i, category: 'bebidas' },
+  { regex: /\b(cafe\s+con\s+leche|cappuccino|capuchino|mocaccino)\b/i, category: 'bebidas' },
+  
+  // Lácteos (alta precedencia para crema/suero de leche)
+  { regex: /\b(crema|suero)\s+de\s+leche\b/i, category: 'lacteos' },
+  { regex: /\b(leche)\s+(entera|deslactosada|descremada|semidescremada|en\s+polvo|condensada|evaporada)\b/i, category: 'lacteos' },
+  { regex: /\b(queso)\s+[a-z]+/i, category: 'lacteos' },
+
+  // Despensa: salsas, mermeladas, conservas, aceites
+  { regex: /\b(salsa|pasta|pure|concentrado|aderezo)\s+de\s+[a-z]+/i, category: 'despensa' },
+  { regex: /\b(mermelada|dulce|arequipe|manjar|confitura)\s+de\s+[a-z]+/i, category: 'despensa' },
+  { regex: /\b(aceite|vinagre)\s+de\s+[a-z]+/i, category: 'despensa' },
+  { regex: /\b(harina|sopa|caldo)\s+de\s+[a-z]+/i, category: 'despensa' },
+  { regex: /\b(arroz\s+con\s+[a-z]+|pasta\s+con\s+[a-z]+)\b/i, category: 'despensa' },
+  { regex: /\b(atun|sardina|salmon|pollo)\s+en\s+(lata|aceite|agua)\b/i, category: 'despensa' },
+];
+
+// Diccionario exhaustivo por categoría con términos singulares base
 const KEYWORD_MAP = {
-  frutas: ['manzana', 'banana', 'platano', 'pera', 'naranja', 'limon', 'fresa', 'uva', 'tomate', 'lechuga', 'papa', 'cebolla', 'zanahoria', 'aguacate', 'palta', 'espinaca', 'fruta', 'verdura', 'brocoli', 'sandia', 'melon', 'pina', 'mango', 'pepino'],
-  lacteos: ['leche', 'queso', 'yogur', 'yogurt', 'huevo', 'huevos', 'mantequilla', 'crema', 'suero', 'parmesano', 'mozzarella'],
-  carnes: ['carne', 'pollo', 'pescado', 'res', 'cerdo', 'jamon', 'salchicha', 'atun', 'salmon', 'molida', 'tocino', 'chuleta', 'pavo'],
-  panaderia: ['pan', 'bagel', 'tostada', 'tortilla', 'panqueque', 'croissant'],
-  despensa: ['arroz', 'pasta', 'fideo', 'harina', 'avena', 'cereal', 'galleta', 'frijol', 'lenteja', 'azucar', 'sal', 'aceite', 'maiz', 'salsa', 'conserva'],
-  limpieza: ['jabon', 'detergente', 'cloro', 'lavaloza', 'lava loza', 'papel', 'toalla', 'shampoo', 'champu', 'pasta dental', 'cepillo', 'limpiador', 'suavizante', 'esponja', 'lavandina', 'desinfectante', 'trapero', 'trapeador', 'escoba', 'mopa', 'recogedor', 'balde'],
-  bebidas: ['agua', 'jugo', 'gaseosa', 'refresco', 'soda', 'coca', 'pepsi', 'cerveza', 'vino', 'cafe', 'te', 'licor', 'whisky', 'energetica']
+  frutas: [
+    // Frutas
+    'manzana', 'banana', 'banano', 'platano', 'pera', 'naranja', 'limon', 'lima', 'fresa', 'frutilla',
+    'uva', 'tomate', 'jitomate', 'aguacate', 'palta', 'sandia', 'patilla', 'melon', 'pina', 'anana',
+    'mango', 'mandarina', 'mora', 'kiwi', 'durazno', 'melocoton', 'ciruela', 'maracuya', 'lulo',
+    'guanabana', 'guayaba', 'papaya', 'coco', 'arandano', 'frambuesa', 'granadilla', 'pitahaya',
+    'uchuva', 'toronja', 'higo', 'cereza', 'guama', 'zapote', 'chontaduro', 'borojo', 'curuba',
+    'tamarindo', 'mamey', 'carambolo', 'pomelo', 'damasco', 'albaricoque',
+    // Verduras, hortalizas y tubérculos
+    'lechuga', 'papa', 'patata', 'cebolla', 'zanahoria', 'espinaca', 'brocoli', 'pepino', 'pepinillo',
+    'ajo', 'cilantro', 'perejil', 'apio', 'pimenton', 'pimiento', 'aji', 'chile', 'remolacha', 'betabel',
+    'coliflor', 'repollo', 'col', 'berenjena', 'calabacin', 'zucchini', 'calabaza', 'ahuyama', 'zapallo',
+    'esparrago', 'champinon', 'seta', 'hongo', 'jengibre', 'yuca', 'mandioca', 'arracacha', 'name',
+    'habichuela', 'judia', 'arveja', 'guisante', 'ejote', 'rabano', 'acelga', 'alcachofa', 'puerro',
+    'cebollin', 'verdeo', 'batata', 'camote', 'elote', 'choclo', 'mazorca', 'rucula', 'albahaca',
+    'menta', 'hierbabuena', 'romero', 'tomillo fresco', 'oregano fresco', 'nopal', 'verdura', 'hortaliza'
+  ],
+  lacteos: [
+    'leche', 'queso', 'yogur', 'yogurt', 'huevo', 'mantequilla', 'ghee', 'crema de leche', 'nata',
+    'suero', 'parmesano', 'mozzarella', 'cuajada', 'quesillo', 'ricota', 'ricotta', 'requeson',
+    'kumis', 'leche condensada', 'leche evaporada', 'margarina', 'cheddar', 'gouda', 'brie',
+    'provolone', 'gruyere', 'quesito', 'lecherita', 'leche en polvo'
+  ],
+  carnes: [
+    'carne', 'pollo', 'res', 'cerdo', 'puerco', 'chancho', 'ternera', 'pechuga', 'muslo', 'alita',
+    'ala de pollo', 'pescado', 'atun', 'salmon', 'trucha', 'tilapia', 'mojarra', 'sardina', 'corvina',
+    'bagre', 'bocachico', 'robalo', 'marisco', 'camaron', 'langostino', 'calamar', 'pulpo', 'molida',
+    'bistec', 'bife', 'filete', 'costilla', 'lomo', 'chuleta', 'tocino', 'tocineta', 'panceta',
+    'bacon', 'jamon', 'salchicha', 'chorizo', 'morcilla', 'butifarra', 'salchichon', 'mortadela',
+    'pavo', 'cordero', 'cabrito', 'callo', 'mondongo', 'higado', 'molleja', 'albondiga', 'hamburguesa'
+  ],
+  panaderia: [
+    'pan', 'bagel', 'tostada', 'tortilla', 'panqueque', 'croissant', 'arepa', 'medialuna', 'bolillo',
+    'telera', 'baguette', 'ciabatta', 'mogolla', 'almojabana', 'pandebono', 'bunuelo', 'ponque',
+    'bizcocho', 'torta', 'pastel', 'queque', 'magdalena', 'muffin', 'waffle', 'masa de hojaldre',
+    'brazo de reina', 'pan dulce', 'pan tajado', 'pan arabe', 'pita', 'roscon'
+  ],
+  despensa: [
+    'arroz', 'pasta', 'fideo', 'espagueti', 'macarron', 'harina', 'avena', 'cereal', 'galleta',
+    'frijol', 'frejol', 'poroto', 'lenteja', 'garbanzo', 'azucar', 'sal', 'aceite', 'vinagre',
+    'mayonesa', 'mostaza', 'salsa', 'ketchup', 'catsup', 'conserva', 'enlatado', 'maiz pira',
+    'palomitas', 'miel', 'panela', 'chocolate', 'cocoa', 'milo', 'cafe', 'te en bolsa', 'hierba mate',
+    'polvo de hornear', 'levadura', 'gelatina', 'flan', 'comino', 'pimienta', 'canela', 'clavo',
+    'laurel', 'achiote', 'curcuma', 'colorante', 'vainilla', 'sopa instantanea', 'ramen', 'atun lata',
+    'caldo maggi', 'cubito', 'nueces', 'almendras', 'mani', 'cacahuate', 'pistachos', 'pasas'
+  ],
+  limpieza: [
+    'jabon', 'detergente', 'cloro', 'lejia', 'lavandina', 'blanqueador', 'lavaloza', 'lavavajilla',
+    'papel higienico', 'papel de cocina', 'toalla higienica', 'panal', 'shampoo', 'champu',
+    'acondicionador', 'pasta dental', 'crema dental', 'cepillo de dientes', 'enjuague bucal',
+    'desodorante', 'antitranspirante', 'limpiador', 'desinfectante', 'suavizante', 'suavitel',
+    'esponja', 'esponjilla', 'trapero', 'trapeador', 'mopa', 'escoba', 'recogedor', 'balde',
+    'bolsa de basura', 'guantes de caucho', 'bayetilla', 'limpiavidrios', 'cera para piso',
+    'ambientador', 'insecticida', 'afeitadora', 'rastrillo', 'espuma de afeitar', 'crema de afeitar',
+    'algodon', 'copitos', 'toallitas humedas'
+  ],
+  bebidas: [
+    'agua', 'agua mineral', 'agua con gas', 'jugo', 'zumo', 'gaseosa', 'refresco', 'soda', 'coca cola',
+    'pepsi', 'sprite', 'fanta', 'quatro', 'postobon', 'colombiana', 'cerveza', 'vino', 'champagne',
+    'sidra', 'licor', 'aguardiente', 'ron', 'whisky', 'vodka', 'tequila', 'ginebra', 'energetica',
+    'red bull', 'monster', 'gatorade', 'powerade', 'malta', 'pony malta', 'kombucha', 'bebida hidratante'
+  ]
 };
 
+/**
+ * Normaliza una cadena de texto para comparación léxica uniforme.
+ * Remueve acentos, diacríticos y caracteres no alfanuméricos.
+ * @param {string} text
+ * @returns {string}
+ */
 function normalizeCategoryText(text) {
   return String(text || '')
     .toLowerCase()
@@ -37,23 +125,102 @@ function normalizeCategoryText(text) {
     .trim();
 }
 
+/**
+ * Lematizador simple en español para singularizar palabras.
+ * Convierte plurales regulares a su forma canónica singular.
+ * @param {string} word
+ * @returns {string}
+ */
+function lemmatizeSpanishWord(word) {
+  if (!word || word.length <= 3) return word;
+  
+  // Palabras invariables que no deben alterarse
+  const INVARIABLES = new Set(['arroz', 'res', 'gas', 'queso', 'anana', 'maiz', 'compas', 'pais']);
+  if (INVARIABLES.has(word)) return word;
+
+  // Plurales en -ces -> -z (ej: nueces -> nuez, peces -> pez)
+  if (word.endsWith('ces') && word.length > 4) {
+    return word.slice(0, -3) + 'z';
+  }
+
+  // Plurales en -es con consonante previa (ej: limones -> limon, frijoles -> frijol, tomates -> tomate, carnes -> carne)
+  if (word.endsWith('es') && word.length > 4) {
+    const base = word.slice(0, -2);
+    // Casos como tomates -> tomate, carnes -> carne, aguacates -> aguacate
+    if (/[aeiou]t|[aeiou]rn|[aeiou]d|[aeiou]g/.test(base)) {
+      return base + 'e';
+    }
+    // Casos como limones -> limon, frijoles -> frijol, champiñones -> champiñon
+    return base;
+  }
+
+  // Plurales regulares en -s precedidos de vocal (ej: manzanas -> manzana, peras -> pera, huevos -> huevo)
+  if (word.endsWith('s') && /[aeiou]/.test(word[word.length - 2])) {
+    return word.slice(0, -1);
+  }
+
+  return word;
+}
+
+/**
+ * Detecta la categoría óptima para un producto aplicando:
+ * 1. Reglas compuestas de máxima precedencia
+ * 2. Lematización de cada término ingresado
+ * 3. Búsqueda por coincidencia en diccionario extenso
+ * @param {string} text - Nombre o descripción del producto
+ * @returns {string} - Código de categoría ('frutas', 'carnes', 'lacteos', etc.)
+ */
 function detectProductCategory(text) {
-  const normalizedText = ` ${normalizeCategoryText(text)} `;
-  let matchedCategory = 'general';
-  let longestMatch = 0;
+  if (!text || typeof text !== 'string') return 'general';
+  const rawClean = normalizeCategoryText(text);
+  if (!rawClean) return 'general';
+
+  // 1. Evaluar reglas compuestas prioritarias (evita que "jugo de naranja" caiga en frutas)
+  for (const rule of COMPOUND_RULES) {
+    if (rule.regex.test(rawClean)) {
+      return rule.category;
+    }
+  }
+
+  // 2. Extraer y lematizar las palabras del texto ingresado
+  const words = rawClean.split(' ').filter((w) => w.length > 1);
+  const lemmatizedWords = words.map(lemmatizeSpanishWord);
+  const searchTokens = Array.from(new Set([...words, ...lemmatizedWords]));
+
+  // 3. Buscar la mejor coincidencia en el diccionario
+  let bestCategory = 'general';
+  let bestScore = 0;
 
   for (const [category, keywords] of Object.entries(KEYWORD_MAP)) {
     for (const keyword of keywords) {
-      const normalizedKeyword = normalizeCategoryText(keyword);
-      if (normalizedKeyword.length > longestMatch &&
-        normalizedText.includes(` ${normalizedKeyword} `)) {
-        matchedCategory = category;
-        longestMatch = normalizedKeyword.length;
+      const normKeyword = normalizeCategoryText(keyword);
+      
+      // Coincidencia con frase multi-palabra (ej: "crema de leche", "papel higienico")
+      if (normKeyword.includes(' ')) {
+        if (rawClean.includes(normKeyword)) {
+          const score = normKeyword.length * 2;
+          if (score > bestScore) {
+            bestScore = score;
+            bestCategory = category;
+          }
+        }
+      } else {
+        // Coincidencia con palabra lematizada
+        const lemmatizedKeyword = lemmatizeSpanishWord(normKeyword);
+        for (const token of searchTokens) {
+          if (token === normKeyword || token === lemmatizedKeyword) {
+            const score = normKeyword.length + 5;
+            if (score > bestScore) {
+              bestScore = score;
+              bestCategory = category;
+            }
+          }
+        }
       }
     }
   }
 
-  return matchedCategory;
+  return bestCategory;
 }
 
 const STORAGE_KEY = 'todos';
@@ -102,6 +269,7 @@ const editItemModal = document.getElementById('edit-item-modal');
 const editItemForm = document.getElementById('edit-item-form');
 const editItemId = document.getElementById('edit-item-id');
 const editItemName = document.getElementById('edit-item-name');
+const editItemCategory = document.getElementById('edit-item-category');
 const editItemQty = document.getElementById('edit-item-qty');
 const editItemPrice = document.getElementById('edit-item-price');
 const editItemStore = document.getElementById('edit-item-store');
@@ -127,6 +295,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initNetworkListeners();
 });
 
+/**
+ * Inicializa la aplicación, carga la meta de presupuesto y renderiza los productos.
+ */
 async function initApp() {
   initEventListeners();
   initModalListeners();
@@ -136,6 +307,9 @@ async function initApp() {
   renderTodos();
 }
 
+/**
+ * Registra el Service Worker de la PWA para soporte 100% offline.
+ */
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -147,6 +321,9 @@ function registerServiceWorker() {
   }
 }
 
+/**
+ * Supervisa el estado de la conexión a internet y actualiza el indicador visual.
+ */
 function initNetworkListeners() {
   const updateNetworkStatus = () => {
     if (!navigator.onLine) offlineBadge?.classList.add('visible');
@@ -160,6 +337,9 @@ function initNetworkListeners() {
 // ==========================================
 // Configuración de Eventos Principales
 // ==========================================
+/**
+ * Configura los escuchadores de eventos para el formulario, lista, filtros y chips.
+ */
 function initEventListeners() {
   todoForm.addEventListener('submit', handleAddTodo);
   todoList.addEventListener('click', handleListAction);
@@ -224,6 +404,9 @@ function initEventListeners() {
 // ==========================================
 // Gestión de Modales
 // ==========================================
+/**
+ * Configura los eventos de interacción y envío de los modales Cupertino.
+ */
 function initModalListeners() {
   // Abrir Modal de Presupuesto
   budgetGoalBtn?.addEventListener('click', () => {
@@ -267,6 +450,7 @@ function initModalListeners() {
     e.preventDefault();
     const id = editItemId.value;
     const newName = editItemName.value.trim();
+    const newCategory = editItemCategory ? editItemCategory.value : 'general';
     const newQty = parseInt(editItemQty.value, 10) || 1;
     const newPrice = parseFloat(editItemPrice.value) || 0;
     const newStore = editItemStore.value.trim();
@@ -277,6 +461,7 @@ function initModalListeners() {
     const targetItem = todos.find((t) => t.id === id);
     if (targetItem) {
       targetItem.text = newName;
+      targetItem.category = newCategory;
       targetItem.quantity = newQty;
       targetItem.price = newPrice;
       targetItem.store = newStore;
@@ -285,7 +470,7 @@ function initModalListeners() {
 
       // Si tiene precio, registrar en el histórico de IndexedDB
       if (newPrice > 0 && window.mercadoDB) {
-        await window.mercadoDB.recordPrice(newName, newPrice, targetItem.category, newStore || 'General');
+        await window.mercadoDB.recordPrice(newName, newPrice, newCategory, newStore || 'General');
       }
 
       closeModal(editItemModal);
@@ -310,6 +495,10 @@ function initModalListeners() {
   });
 }
 
+/**
+ * Abre un modal Cupertino y bloquea el scroll del fondo.
+ * @param {HTMLElement} modalEl - Elemento overlay del modal
+ */
 function openModal(modalEl) {
   if (!modalEl) return;
   modalEl.classList.add('active');
@@ -317,6 +506,10 @@ function openModal(modalEl) {
   document.body.style.overflow = 'hidden';
 }
 
+/**
+ * Cierra un modal Cupertino y restablece el scroll.
+ * @param {HTMLElement} modalEl - Elemento overlay del modal
+ */
 function closeModal(modalEl) {
   if (!modalEl) return;
   modalEl.classList.remove('active');
@@ -329,6 +522,9 @@ function closeModal(modalEl) {
 // ==========================================
 let cachedCatalog = [];
 
+/**
+ * Carga el catálogo completo desde IndexedDB y lo renderiza en el modal de precios.
+ */
 async function loadPriceHistoryCatalog() {
   if (!historyItemsContainer) return;
   historyItemsContainer.innerHTML = '<p class="modal-desc">Cargando catálogo...</p>';
@@ -340,6 +536,10 @@ async function loadPriceHistoryCatalog() {
   renderPriceHistoryList(cachedCatalog);
 }
 
+/**
+ * Renderiza la lista visual de productos con precios históricos y tendencias.
+ * @param {Array<Object>} items - Lista de artículos del catálogo
+ */
 function renderPriceHistoryList(items) {
   if (!historyItemsContainer) return;
 
@@ -384,6 +584,10 @@ function renderPriceHistoryList(items) {
   });
 }
 
+/**
+ * Filtra los productos del catálogo histórico por nombre o tienda.
+ * @param {string} query - Término de búsqueda ingresado
+ */
 function filterPriceHistoryList(query) {
   const q = (query || '').toLowerCase().trim();
   if (!q) {
@@ -399,6 +603,10 @@ function filterPriceHistoryList(query) {
 // ==========================================
 // Filtros y Autocategorización
 // ==========================================
+/**
+ * Aplica un filtro de categoría sobre la lista y actualiza el estado de los chips.
+ * @param {string} categoryKey - Código de categoría ('all', 'frutas', 'carnes', etc.)
+ */
 function setCategoryFilter(categoryKey) {
   currentCategoryFilter = categoryKey;
 
@@ -426,9 +634,26 @@ function setCategoryFilter(categoryKey) {
 async function handleInputChange(e) {
   const text = e.target.value.trim();
 
-  // 1. Autocategorización inteligente
+  // 1. Consulta de catálogo previo en IndexedDB para aprender de la memoria del usuario
+  let rememberedCategory = null;
+  if (text.length >= 2 && window.mercadoDB) {
+    const info = await window.mercadoDB.getLatestProductInfo(text);
+    if (info) {
+      if (info.category && CATEGORIES[info.category]) {
+        rememberedCategory = info.category;
+      }
+      if (info.lastPrice > 0) {
+        suggestedPriceValue = info.lastPrice;
+        if (hintName) hintName.innerText = info.displayName;
+        if (hintPrice) hintPrice.innerText = `$${info.lastPrice.toFixed(2)}`;
+        if (priceHistoryHint) priceHistoryHint.style.display = 'flex';
+      }
+    }
+  }
+
+  // 2. Autocategorización inteligente (Prioridad: Aprendizaje del usuario > Algoritmo léxico)
   if (!manualCategorySelected || currentCategoryFilter === 'all') {
-    const matchedCategory = detectProductCategory(text);
+    const matchedCategory = rememberedCategory || detectProductCategory(text);
     selectedCategory = matchedCategory;
 
     if (currentCategoryFilter === 'all') {
@@ -441,25 +666,19 @@ async function handleInputChange(e) {
     }
   }
 
-  // 2. Consulta de último precio conocido en IndexedDB
-  if (text.length >= 3 && window.mercadoDB) {
-    const info = await window.mercadoDB.getLatestProductInfo(text);
-    if (info && info.lastPrice > 0) {
-      suggestedPriceValue = info.lastPrice;
-      if (hintName) hintName.innerText = info.displayName;
-      if (hintPrice) hintPrice.innerText = `$${info.lastPrice.toFixed(2)}`;
-      if (priceHistoryHint) priceHistoryHint.style.display = 'flex';
-      return;
-    }
+  if (!rememberedCategory && text.length < 3) {
+    if (priceHistoryHint) priceHistoryHint.style.display = 'none';
+    suggestedPriceValue = null;
   }
-
-  if (priceHistoryHint) priceHistoryHint.style.display = 'none';
-  suggestedPriceValue = null;
 }
 
 // ==========================================
 // Almacenamiento Local (LocalStorage)
 // ==========================================
+/**
+ * Obtiene la lista de compras almacenada en LocalStorage con migración de versiones previas.
+ * @returns {Array<Object>} Lista de tareas/productos normalizados
+ */
 function getStoredTodos() {
   const rawData = localStorage.getItem(STORAGE_KEY);
   if (!rawData) return [];
@@ -506,6 +725,10 @@ function getStoredTodos() {
   }
 }
 
+/**
+ * Guarda la lista de productos en LocalStorage de forma segura.
+ * @param {Array<Object>} todos - Lista de productos a persistir
+ */
 function saveStoredTodos(todos) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
@@ -517,6 +740,11 @@ function saveStoredTodos(todos) {
 // ==========================================
 // Acciones del Formulario
 // ==========================================
+/**
+ * Procesa la adición de un nuevo producto desde el formulario.
+ * Valida texto, asigna categoría inteligente y persiste en LocalStorage e IndexedDB.
+ * @param {Event} event - Evento de envío de formulario
+ */
 async function handleAddTodo(event) {
   event.preventDefault();
 
@@ -580,6 +808,10 @@ async function handleAddTodo(event) {
   }
 }
 
+/**
+ * Maneja las acciones delegadas en la lista: filtro por badge, edición por precio, completar y eliminar.
+ * @param {MouseEvent} event
+ */
 function handleListAction(event) {
   const target = event.target;
 
@@ -624,6 +856,10 @@ function handleListAction(event) {
   }
 }
 
+/**
+ * Abre el modal de edición con los datos actuales del producto.
+ * @param {string} todoId - ID del producto
+ */
 function openEditItemModal(todoId) {
   const todos = getStoredTodos();
   const item = todos.find((t) => t.id === todoId);
@@ -631,6 +867,7 @@ function openEditItemModal(todoId) {
 
   editItemId.value = item.id;
   editItemName.value = item.text;
+  if (editItemCategory) editItemCategory.value = item.category || 'general';
   editItemQty.value = item.quantity || 1;
   editItemPrice.value = item.price > 0 ? item.price : '';
   editItemStore.value = item.store || '';
@@ -638,6 +875,10 @@ function openEditItemModal(todoId) {
   openModal(editItemModal);
 }
 
+/**
+ * Alterna el estado de completado de un producto y registra su precio en el catálogo si aplica.
+ * @param {string} id - ID del producto
+ */
 async function toggleTodoStatus(id) {
   const todos = getStoredTodos();
   let completedItem = null;
@@ -669,6 +910,11 @@ async function toggleTodoStatus(id) {
   renderTodos();
 }
 
+/**
+ * Elimina un producto de la lista con animación de caída suave.
+ * @param {string} id - ID del producto
+ * @param {HTMLElement} element - Nodo DOM del elemento
+ */
 function deleteTodoItem(id, element) {
   element.classList.add('fall');
 
@@ -685,6 +931,9 @@ function deleteTodoItem(id, element) {
   }, 350);
 }
 
+/**
+ * Solicita confirmación y elimina en bloque todos los productos comprados.
+ */
 function handleClearCompleted() {
   const todos = getStoredTodos();
   const completedCount = todos.filter((t) => t.completed).length;
@@ -701,6 +950,9 @@ function handleClearCompleted() {
   renderTodos();
 }
 
+/**
+ * Comparte la lista de compras formateada mediante la Web Share API o portapapeles.
+ */
 function handleShareList() {
   const todos = getStoredTodos();
   if (todos.length === 0) {
@@ -759,6 +1011,12 @@ function handleShareList() {
 // ==========================================
 // Gestos Táctiles (Swipe to Complete / Delete)
 // ==========================================
+/**
+ * Agrega gestos táctiles de deslizamiento (Swipe) para completar (derecha) o borrar (izquierda).
+ * @param {HTMLElement} contentElement - Elemento que recibe el arrastre táctil
+ * @param {string} todoId - ID del producto
+ * @param {HTMLElement} todoContainer - Contenedor padre de la tarea
+ */
 function attachSwipeListeners(contentElement, todoId, todoContainer) {
   let startX = 0;
   let startY = 0;
@@ -841,6 +1099,10 @@ function attachSwipeListeners(contentElement, todoId, todoContainer) {
   contentElement.addEventListener('touchcancel', handleTouchEnd, { passive: true });
 }
 
+/**
+ * Dispara una respuesta háptica en dispositivos móviles compatibles.
+ * @param {number|Array<number>} pattern - Duración en milisegundos o patrón de vibración
+ */
 function triggerHaptic(pattern) {
   if ('vibrate' in navigator) {
     try {
@@ -852,6 +1114,9 @@ function triggerHaptic(pattern) {
 // ==========================================
 // Renderizado del DOM y Presupuestos
 // ==========================================
+/**
+ * Renderiza la lista completa de productos en el DOM aplicando filtros activos de estado y categoría.
+ */
 function renderTodos() {
   const allTodos = getStoredTodos();
 
@@ -970,6 +1235,10 @@ function renderTodos() {
   updateBudgetTracker(allTodos);
 }
 
+/**
+ * Actualiza los contadores de productos y el estado del botón de limpieza.
+ * @param {Array<Object>} todos - Lista de productos cargados
+ */
 function updateStats(todos) {
   const total = todos.length;
   const completedCount = todos.filter((t) => t.completed).length;
@@ -979,18 +1248,23 @@ function updateStats(todos) {
     const categoryTodos = todos.filter((t) => t.category === currentCategoryFilter);
     const catTotal = categoryTodos.length;
     const catCompleted = categoryTodos.filter((t) => t.completed).length;
+    const catPending = catTotal - catCompleted;
     const catName = CATEGORIES[currentCategoryFilter]?.label || currentCategoryFilter;
     todoStats.innerText = `${catCompleted} de ${catTotal} en ${catName}`;
+    footerCounter.innerText = `${catPending} restante${catPending === 1 ? '' : 's'}`;
   } else {
     todoStats.innerText = total === 0 ? '0 productos en la lista' : `${completedCount} de ${total} comprados`;
+    footerCounter.innerText = `${pendingCount} restante${pendingCount === 1 ? '' : 's'}`;
   }
-
-  footerCounter.innerText = `${pendingCount} restante${pendingCount === 1 ? '' : 's'}`;
 
   if (completedCount > 0) clearCompletedBtn.classList.remove('disabled');
   else clearCompletedBtn.classList.add('disabled');
 }
 
+/**
+ * Calcula en tiempo real el gasto acumulado en el carrito y actualiza la barra de progreso.
+ * @param {Array<Object>} todos - Lista de productos cargados
+ */
 function updateBudgetTracker(todos) {
   const totalEstimated = todos.reduce((sum, t) => sum + (parseFloat(t.price) || 0) * (parseInt(t.quantity, 10) || 1), 0);
   const totalSpent = todos
@@ -1032,3 +1306,5 @@ window.getStoredTodos = getStoredTodos;
 window.saveStoredTodos = saveStoredTodos;
 window.renderTodos = renderTodos;
 window.triggerHaptic = triggerHaptic;
+window.detectProductCategory = detectProductCategory;
+window.CATEGORIES = CATEGORIES;

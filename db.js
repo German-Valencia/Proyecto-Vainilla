@@ -53,11 +53,30 @@ class MercadoDB {
   }
 
   normalizeName(name) {
-    return (name || '')
+    let clean = (name || '')
       .toLowerCase()
       .trim()
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, ''); // Quita tildes para búsqueda uniforme
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ');
+
+    // Singularización simple de palabras en español para unificar catálogo
+    const words = clean.split(' ').map((word) => {
+      if (word.length <= 3) return word;
+      const INVARIABLES = new Set(['arroz', 'res', 'gas', 'queso', 'anana', 'maiz']);
+      if (INVARIABLES.has(word)) return word;
+      if (word.endsWith('ces') && word.length > 4) return word.slice(0, -3) + 'z';
+      if (word.endsWith('es') && word.length > 4) {
+        const base = word.slice(0, -2);
+        if (/[aeiou]t|[aeiou]rn|[aeiou]d|[aeiou]g/.test(base)) return base + 'e';
+        return base;
+      }
+      if (word.endsWith('s') && /[aeiou]/.test(word[word.length - 2])) return word.slice(0, -1);
+      return word;
+    });
+
+    return words.join(' ').trim();
   }
 
   /**

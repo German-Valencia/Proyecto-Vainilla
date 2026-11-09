@@ -3,7 +3,7 @@
  * Proporciona soporte 100% Offline y almacenamiento en caché para iPhone y navegadores modernos.
  */
 
-const CACHE_NAME = 'mercadoya-v10';
+const CACHE_NAME = 'mercadoya-v11';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -12,15 +12,15 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './db.js',
   './receipt-scanner.js',
-  './manifest.json?v=2',
+  './manifest.json',
   './manual.html',
   './privacy.html',
   './terms.html',
   './disclaimer.html',
-  './icon.svg?v=2',
-  './apple-touch-icon.png?v=2',
-  './icon-192.png?v=2',
-  './icon-512.png?v=2',
+  './icon.svg',
+  './apple-touch-icon.png',
+  './icon-192.png',
+  './icon-512.png',
   './og-image.png',
   'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
@@ -79,8 +79,14 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // Si la red falla y no está en caché, devolver fallback para navegación si aplica
+          // Si la red falla y no está en caché, devolver fallback para navegación inteligente
           if (event.request.mode === 'navigate') {
+            const url = new URL(event.request.url);
+            const path = url.pathname.toLowerCase();
+            if (path.includes('manual')) return caches.match('./manual.html');
+            if (path.includes('privacy')) return caches.match('./privacy.html');
+            if (path.includes('terms')) return caches.match('./terms.html');
+            if (path.includes('disclaimer')) return caches.match('./disclaimer.html');
             return caches.match('./index.html');
           }
         });

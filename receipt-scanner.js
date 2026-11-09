@@ -78,6 +78,17 @@ class ReceiptScanner {
     this.applyBtn?.addEventListener('click', () => {
       this.applyAuditToShoppingList();
     });
+
+    // Botón para alternar selección de todos los checkboxes en auditoría
+    this.auditContainer?.addEventListener('click', (e) => {
+      const toggleBtn = e.target.closest('#audit-toggle-all-btn');
+      if (toggleBtn) {
+        const checkboxes = this.auditContainer.querySelectorAll('.audit-match-check, .audit-unlisted-check');
+        const anyUnchecked = Array.from(checkboxes).some((cb) => !cb.checked);
+        checkboxes.forEach((cb) => { cb.checked = anyUnchecked; });
+        toggleBtn.innerText = anyUnchecked ? '✗ Desmarcar todos' : '✓ Seleccionar todos';
+      }
+    });
   }
 
   /**
@@ -560,7 +571,8 @@ class ReceiptScanner {
         <strong>${incompleteReceipt ? 'Lectura incompleta' : 'Revisa antes de confirmar'}</strong>
         <span>${incompleteReceipt
           ? `La factura indica ${data.expectedItemCount} artículos; el OCR detectó ${data.detectedItemCount}. Puede haber líneas faltantes.`
-          : 'El OCR puede equivocarse. Confirma manualmente cada línea que quieras registrar.'}</span>
+          : 'El OCR puede tener pequeñas discrepancias. Hemos pre-seleccionado las coincidencias confiables.'}</span>
+        <button type="button" id="audit-toggle-all-btn" class="modal-btn secondary-btn" style="margin-top: 0.5rem; padding: 0.35rem 0.75rem; font-size: 0.78rem; width: fit-content;">✓ Alternar selección (Todos)</button>
       </div>
     `;
 
@@ -585,7 +597,7 @@ class ReceiptScanner {
             <div class="audit-card-price">
               <span class="audit-price-tag">${this.formatReceiptCurrency(m.ticketItem.lineTotal)}</span>
               <label class="audit-add-label">
-                <input type="checkbox" class="audit-match-check" data-index="${idx}" />
+                <input type="checkbox" class="audit-match-check" data-index="${idx}" ${m.ticketItem.confidence !== 'low' ? 'checked' : ''} />
                 <span class="custom-check"></span>
                 <span>Confirmar</span>
               </label>
@@ -620,7 +632,7 @@ class ReceiptScanner {
             <div class="audit-card-price">
               <span class="audit-price-tag impulse-price">+${this.formatReceiptCurrency(u.lineTotal)}</span>
               <label class="audit-add-label" title="¿Agregar a tu histórico?">
-                <input type="checkbox" class="audit-unlisted-check" data-index="${idx}" />
+                <input type="checkbox" class="audit-unlisted-check" data-index="${idx}" ${u.confidence === 'high' ? 'checked' : ''} />
                 <span>Confirmar</span>
               </label>
             </div>
@@ -712,11 +724,12 @@ class ReceiptScanner {
       const quantityIsEach = item.unit === 'UN' && Number.isInteger(item.quantity);
       const quantity = quantityIsEach ? item.quantity : 1;
       const actualPrice = quantityIsEach ? lineTotal / quantity : lineTotal;
+      const detectedCategory = (window.detectProductCategory && window.detectProductCategory(name)) || 'general';
       const newImpulseItem = {
         id: `impulse_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         text: name,
         completed: true,
-        category: 'general',
+        category: detectedCategory,
         quantity,
         price: actualPrice,
         store: 'Factura',
@@ -726,7 +739,7 @@ class ReceiptScanner {
       updatedCount++;
 
       if (window.mercadoDB) {
-        await window.mercadoDB.recordPrice(name, actualPrice, 'general', 'Factura');
+        await window.mercadoDB.recordPrice(name, actualPrice, detectedCategory, 'Factura');
       }
     }
 
